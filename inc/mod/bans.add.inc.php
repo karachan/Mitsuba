@@ -3,6 +3,8 @@ if (!defined("IN_MOD"))
 {
 	die("Nah, I won't serve that file to you.");
 }
+$mitsuba->admin->reqPermission("bans.add.request");
+$canBan = $mitsuba->admin->checkPermission("bans.add");
 if (empty($_GET['r']))
 	{
 	if (empty($_POST['ip']))
@@ -27,7 +29,7 @@ if (empty($_GET['r']))
 			}
 		}
 		$title = "";
-		if ($_SESSION['type']>=2)
+		if ($canBan)
 		{ 
 			$title = $lang['mod/add_ban'];
 		} else {
@@ -41,10 +43,10 @@ if (empty($_GET['r']))
 <?php echo $lang['mod/reason']; ?>: <input type="text" name="reason" /><br />
 <?php echo $lang['mod/staff_note']; ?>: <input type="text" name="note" /><br />
 <?php
-if ($_SESSION['type']>=1) {
+if ($canBan) {
 ?>
 <?php echo $lang['mod/expires_eg']; ?>: <input type="text" name="expires" /><br />
-<?php echo $lang['mod/appeal_in']; ?>: <input type="text" name="appeal" /><br />
+<?php echo $lang['mod/appeal_in']; ?>: <input type="text" name="appeal" value="1s" /><br />
 <?php $mitsuba->admin->ui->getBoardList(); ?><br />
 <br />
 <?php
@@ -55,7 +57,7 @@ if (!empty($postinfo))
 <input type="hidden" name="post" value="<?php echo $post; ?>" />
 <input type="hidden" name="board" value="<?php echo $board; ?>" />
 <?php
-if ($_SESSION['type']>=1) {
+if ($canBan) {
 if ((!empty($_GET['d'])) && ($_GET['d'] == 1))
 {
 ?>
@@ -120,7 +122,7 @@ if ((!empty($_GET['d'])) && ($_GET['d'] == 1))
 		if ($boards != "%") { $boards = substr($boards, 0, strlen($boards) - 1); }
 		$result = 0;
 		$what = 1;
-		if ($_SESSION['type'] <= 1)
+		if (!$canBan)
 		{
 			$append = 0;
 			if ((!empty($_POST['delete'])) && ($_POST['delete']=="1"))
@@ -135,12 +137,12 @@ if ((!empty($_GET['d'])) && ($_GET['d'] == 1))
 			$result = $mitsuba->admin->bans->addBanRequest($_POST['ip'], $_POST['reason'], $_POST['note'], $board, $post, $append);
 			$what = 2;
 		} else {
-			$result = $mitsuba->admin->bans->addBan($_POST['ip'], $_POST['reason'], $_POST['note'], $_POST['expires'], $boards, $_POST['expires']);
+			$result = $mitsuba->admin->bans->addBan($_POST['ip'], $_POST['reason'], $_POST['note'], $_POST['expires'], $boards, $_POST['appeal']);
 			if ($result != -2)
 			{
 				if ((!empty($_POST['delete'])) && ($_POST['delete']=="1"))
 				{
-					$mitsuba->posting->deletePost($board, $post, "", 0, $_SESSION['type']);
+					$mitsuba->posting->deletePost($board, $post, "", 0, $mitsuba->admin->checkPermission("post.delete.single"));
 				} else {
 					if ((!empty($post)) && (!empty($_POST['append'])) && ($_POST['append'] == 1))
 					{
@@ -188,7 +190,7 @@ if ((!empty($_GET['d'])) && ($_GET['d'] == 1))
 					$board = "";
 				}
 				$title = "";
-				if ($_SESSION['type']>=2)
+				if ($canBan)
 				{ 
 					$title = $lang['mod/add_ban'];
 				} else {

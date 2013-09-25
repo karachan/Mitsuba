@@ -3,11 +3,12 @@ if (!defined("IN_MOD"))
 {
 	die("Nah, I won't serve that file to you.");
 }
-$mitsuba->admin->reqPermission(2);
+$mitsuba->admin->reqPermission("appeals.view");
 if (!empty($_GET['m']))
 {
 	if ($_GET['m'] == "clear")
 	{
+		$mitsuba->admin->reqPermission("appeals.clear.single");
 		if ((!empty($_GET['id'])) && (is_numeric($_GET['id'])))
 		{
 			$conn->query("DELETE FROM appeals WHERE id=".$_GET['id']);
@@ -16,6 +17,7 @@ if (!empty($_GET['m']))
 	
 	if ($_GET['m'] == "clear_all_yes")
 	{
+		$mitsuba->admin->reqPermission("appeals.clear.all");
 		$conn->query("TRUNCATE TABLE appeals;");
 	}
 }
@@ -56,19 +58,13 @@ while ($row = $appeals->fetch_assoc())
 		} else {
 			echo "<td>".$ban['start_ip']." - ".$ban['end_ip']." ( ".$row['ip']." )</td>";
 		}
-		if ($ban['expires'] != 0)
-		{
-			$left = floor($ban['expires'] - time()/(60*60*24));
-		} else {
-			$left = -1;
-		}
 		echo "<td>".$ban['reason']."</td>";
 		echo "<td>".$ban['note']."</td>";
-		if ($left = -1)
+		if ($row['expires'] != 0)
 		{
-			echo "<td><center><b>".$lang['mod/permaban']."</b></center></td>";
+		echo "<td><center>".date("d/m/Y @ H:i", $row['expires'])."</center></td>";
 		} else {
-			echo "<td><center>".$left." days</center></td>";
+		echo "<td><b>never</b></td>";
 		}
 		echo "<td><center>".$row['email']."</center></td>";
 		echo "<td>".$row['msg']."</td>";

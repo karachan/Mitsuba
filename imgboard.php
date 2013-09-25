@@ -28,14 +28,12 @@ if (!empty($_POST['mode']))
 	$conn = new mysqli($db_host, $db_username, $db_password, $db_database);
 	$mitsuba = new Mitsuba($conn);
 	$mod = 0;
-	$mod_type = 0;
 	if ((!empty($_GET['mod'])) && ($_GET['mod']>=1))
 	{
 		if ((!empty($_POST['board'])) && ($mitsuba->common->isBoard($_POST['board'])))
 		{
 			$mitsuba->admin->canBoard($_POST['board']);
 			$mod = 1;
-			if (!empty($_SESSION['type'])) { $mod_type = $_SESSION['type']; }
 			if ($_GET['mod']==1)
 			{
 				$return_url = "mod.php?/board&b=".$_POST['board'];
@@ -44,7 +42,6 @@ if (!empty($_POST['mode']))
 			}
 		} else {
 			$mod = 1;
-			if (!empty($_SESSION['type'])) { $mod_type = $_SESSION['type']; }
 			if ($_GET['mod']==1)
 			{
 				$return_url = "mod.php";
@@ -72,7 +69,7 @@ if (!empty($_POST['mode']))
 			$ignoresizelimit = 0;
 			if ($mod >= 1)
 			{
-				if ((!empty($_POST['ignoresizelimit'])) && ($_POST['ignoresizelimit']==1) && ($mod_type >= 1))
+				if ((!empty($_POST['ignoresizelimit'])) && ($_POST['ignoresizelimit']==1) && ($mitsuba->admin->checkPermission("post.ignoresizelimit")))
 				{
 					$ignoresizelimit = 1;
 				}
@@ -96,13 +93,18 @@ if (!empty($_POST['mode']))
 				$mitsuba->common->showMsg($lang['img/error'], $lang['img/replies_not_allowed']);
 				exit;
 			}
-			if (($bdata['hidden'] == 1) && ($mod_type < 1))
+			if ($bdata['hidden'] == 1)
 			{
-				$mitsuba->common->showMsg($lang['img/error'], $lang['img/board_no_exists']);
-				exit;
+				if ($mod >= 1)
+				{
+					$mitsuba->admin->canBoard($bdata['short']);
+				} else {
+					$mitsuba->common->showMsg($lang['img/error'], $lang['img/board_no_exists']);
+					exit;
+				}
 			}
 			
-			if (($mod_type < 1) && ($bdata['captcha'] == 1) && (empty($_SESSION['captcha']) || empty($_POST['captcha']) || strtolower(trim($_POST['captcha'])) != $_SESSION['captcha']))
+			if ((!$mitsuba->admin->checkPermission("post.ignorecaptcha")) && ($bdata['captcha'] == 1) && (empty($_SESSION['captcha']) || empty($_POST['captcha']) || strtolower(trim($_POST['captcha'])) != $_SESSION['captcha']))
 			{
 				$_SESSION['captcha'] = "";
 				$mitsuba->common->showMsg($lang['img/error'], $lang['img/wrong_captcha']);
@@ -115,7 +117,7 @@ if (!empty($_POST['mode']))
 				$mitsuba->common->showMsg($lang['img/error'], sprintf($lang['img/comment_too_long'],strlen($_POST['com']),$bdata['maxchars']));
 				exit;
 			}
-			if ($mod_type < 1)
+			if (!$mitsuba->admin->checkPermission("post.ignorespamfilter"))
 			{
 				$mitsuba->board->checkSpam($_POST['com'], $_POST['board']);
 			}
@@ -124,7 +126,6 @@ if (!empty($_POST['mode']))
 				$mitsuba->common->showMsg($lang['img/error'], $lang['img/choose_one']);
 				exit;
 			}
-			$capcode = 0;
 			$raw = 0;
 			$sticky = 0;
 			$lock = 0;
@@ -132,48 +133,50 @@ if (!empty($_POST['mode']))
 			$nofile = 0;
 			$fake_id = "";
 			$cc_text = "";
-			$cc_color = "";
+			$cc_style = "";
+			$cc_icon = "";
 			if ((!empty($_POST['nofile'])) && ($_POST['nofile']==1) && ($bdata['nofile']==1))
 			{
 				$nofile = 1;
 			}
-			if (($mod >= 1) && ($mod_type>=2))
+			if ($mod >= 1)
 			{
-				if ((!empty($_POST['nolimit'])) && ($_POST['nolimit']==1))
+				if ((!empty($_POST['nolimit'])) && ($_POST['nolimit']==1) && ($mitsuba->admin->checkPermission("post.ignorebumplimit")))
 				{
 					$nolimit = 1;
 				}
-				if ((!empty($_POST['capcode'])) && ($_POST['capcode']==1))
+				if ((!empty($_POST['capcode'])) && ($_POST['capcode']==1) && ($mitsuba->admin->checkPermission("post.capcode")))
 				{
-					$capcode = $mod_type;
-				} elseif ((!empty($_POST['capcode'])) && ($_POST['capcode']==2) && (!empty($_POST['cc_text'])) && (!empty($_POST['cc_color'])))
+					$cc_text = $_SESSION['capcode_text'];
+					$cc_style = $_SESSION['capcode_style'];
+					$cc_icon = $_SESSION['capcode_icon'];
+				} elseif ((!empty($_POST['capcode'])) && ($_POST['capcode']==2) && (!empty($_POST['cc_text'])) && (!empty($_POST['cc_color'])) && ($mitsuba->admin->checkPermission("post.customcapcode")))
 				{
-					$capcode = 5;
 					$cc_text = $_POST['cc_text'];
-					$cc_color = $_POST['cc_color'];
+					$cc_style = $_POST['cc_style'];
 				}
-				if ((!empty($_POST['raw'])) && ($_POST['raw']==1))
+				if ((!empty($_POST['raw'])) && ($_POST['raw']==1) && ($mitsuba->admin->checkPermission("post.raw")))
 				{
 					$raw = 1;
 				}
-				if ((!empty($_POST['nofile'])) && ($_POST['nofile']==1))
+				if ((!empty($_POST['nofile'])) && ($_POST['nofile']==1) && ($mitsuba->admin->checkPermission("post.nofile")))
 				{
 					$nofile = 1;
 				}
-				if ((!empty($_POST['sticky'])) && ($_POST['sticky']==1))
+				if ((!empty($_POST['sticky'])) && ($_POST['sticky']==1) && ($mitsuba->admin->checkPermission("post.sticky")))
 				{
 					$sticky = 1;
 				}
-				if ((!empty($_POST['lock'])) && ($_POST['lock']==1))
+				if ((!empty($_POST['lock'])) && ($_POST['lock']==1) && ($mitsuba->admin->checkPermission("post.closed")))
 				{
 					$lock = 1;
 				}
-				if (!empty($_POST['fake_id']))
+				if (!empty($_POST['fake_id']) && ($mitsuba->admin->checkPermission("post.fakeid")))
 				{
 					$fake_id = $_POST['fake_id'];
 				}
 			}
-			if (($mitsuba->common->isWhitelisted($_SERVER['REMOTE_ADDR']) != 2) && (($mod == 0) || ($mod_type==0)))
+			if (($mitsuba->common->isWhitelisted($_SERVER['REMOTE_ADDR']) != 2) && (($mod == 0) || (!$mitsuba->admin->checkPermission("post.ignorespamlimits"))))
 			{
 				if ((empty($_POST['resto'])) || ($_POST['resto']==0))
 				{
@@ -191,26 +194,26 @@ if (!empty($_POST['mode']))
 				{
 					//TODO: Links
 				} else {
-					$this->mitsuba->showMsg($lang['img/error'], $lang['img/no_link']);
+					$mitsuba->common->showMsg($lang['img/error'], $lang['img/no_link']);
 					exit;
 				}
 			} elseif ((!empty($_POST['embed'])) && ($nofile == 0) && ($bdata['embed']==1))
 			{
 				if (($bdata['file_replies']==0) && ($_POST['resto']!=0))
 				{
-					$this->mitsuba->showMsg($lang['img/error'], $lang['img/file_replies_not_allowed']);
+					$mitsuba->common->showMsg($lang['img/error'], $lang['img/file_replies_not_allowed']);
 					exit;
 				}
 				$filename = $mitsuba->checkEmbed($bdata, $_POST['embeds'], $return_url);
 			} elseif (($nofile == 0) && ($bdata['type']!="textboard")) {
 				if (($bdata['file_replies']==0) && ($_POST['resto']!=0))
 				{
-					$this->mitsuba->showMsg($lang['img/error'], $lang['img/file_replies_not_allowed']);
+					$mitsuba->common->showMsg($lang['img/error'], $lang['img/file_replies_not_allowed']);
 					exit;
 				}
 				if ((empty($_FILES['upfile']['tmp_name'])) && (!empty($_FILES['upfile']['name'])))
 				{
-					$this->mitsuba->showMsg($lang['img/error'], $lang['img/file_too_big']);
+					$mitsuba->common->showMsg($lang['img/error'], $lang['img/file_too_big']);
 					exit;
 				}
 				if (!empty($_FILES['upfile']['tmp_name']))
@@ -219,12 +222,12 @@ if (!empty($_POST['mode']))
 					$file_size = $_FILES['upfile']['size'];
 					if (($file_size > $bdata['filesize']) && ($ignoresizelimit != 1))
 					{
-						$this->mitsuba->showMsg($lang['img/error'], $lang['img/file_too_big']);
+						$mitsuba->common->showMsg($lang['img/error'], $lang['img/file_too_big']);
 						exit;
 					}
 					if (!($nfo = $mitsuba->common->isFile($_FILES['upfile']['tmp_name'], $bdata['extensions'])))
 					{
-						$this->mitsuba->showMsg($lang['img/error'], $lang['img/file_too_big']);
+						$mitsuba->common->showMsg($lang['img/error'], $lang['img/file_too_big']);
 						exit;
 					}
 					$mime = $nfo['mimetype'];
@@ -233,12 +236,20 @@ if (!empty($_POST['mode']))
 					$filename = $fileid . $ext; 
 					$target_path .= $filename;
 					$md5 = md5_file($_FILES['upfile']['tmp_name']);
-					if (($bdata['nodup'] == 1) && (($mod == 0) || ($mod_type == 0)))
+					if (($bdata['nodup'] == 1) && (($mod == 0) || (!$mitsuba->admin->checkPermission("post.ignorenodup"))))
 					{
 						$isit = $conn->query("SELECT * FROM posts WHERE filehash='".$md5."' AND board='".$_POST['board']."'");
 						if ($isit->num_rows >= 1)
-						{			
-							$this->mitsuba->showMsg($lang['img/error'], $lang['img/file_duplicate']);
+						{		
+							$row6 = $isit->fetch_assoc();	
+							$postlink = "";
+							if ($row6['resto']==0)
+							{
+								$postlink = "./".$_POST['board']."/res/".$row6['id'].".html#p".$row6['id'];
+							} else {
+								$postlink = "./".$_POST['board']."/res/".$row6['resto'].".html#p".$row6['id'];
+							}
+							$mitsuba->common->showMsg($lang['img/error'], sprintf($lang['img/file_duplicate'], $postlink));
 							exit;
 						}
 					}
@@ -256,7 +267,7 @@ if (!empty($_POST['mode']))
 			{
 				$name = $bdata['anonymous'];
 			}
-			if ((!empty($_POST['name'])) && (($bdata['noname'] == 0) || (($mod >= 1) && ($mod_type >= 2)))) { $name = $_POST['name']; }
+			if ((!empty($_POST['name'])) && (($bdata['noname'] == 0) || (($mod >= 1) && ($mitsuba->admin->checkPermission("post.ignorenoname"))))) { $name = $_POST['name']; }
 			$resto = 0;
 			if (isset($_POST['resto'])) { $resto = $_POST['resto']; }
 			$password = "";
@@ -283,7 +294,7 @@ if (!empty($_POST['mode']))
 						if ((empty($returned['width'])) || (empty($returned['height'])))
 						{
 							unlink($target_path);
-							$this->mitsuba->showMsg($lang['img/error'], $lang['img/no_thumb']);
+							$mitsuba->common->showMsg($lang['img/error'], $lang['img/no_thumb']);
 							exit;
 						}
 						$thumb_w = $returned['width'];
@@ -293,7 +304,7 @@ if (!empty($_POST['mode']))
 						if ((empty($returned['width'])) || (empty($returned['height'])))
 						{
 							unlink($target_path);
-							$this->mitsuba->showMsg($lang['img/error'], $lang['img/no_thumb']);
+							$mitsuba->common->showMsg($lang['img/error'], $lang['img/no_thumb']);
 							exit;
 						}
 						$thumb_w = $returned['width'];
@@ -312,19 +323,23 @@ if (!empty($_POST['mode']))
 			}
 			setcookie("password", $password, time() + 86400*256);
 			$embed = 0;
-			if (substr($filename, 0, 6) != "embed:")
+			$fname = "";
+			if (!empty($filename))
 			{
-				$fname = $_FILES['upfile']['name'];
-				$filename = "";
-				if (empty($_FILES['upfile']['tmp_name']))
+				if (substr($filename, 0, 6) != "embed:")
 				{
-					$fname = "";
+					$fname = $_FILES['upfile']['name'];
+					$filename = "";
+					if (empty($_FILES['upfile']['tmp_name']))
+					{
+						$fname = "";
+					} else {
+						$filename = $fileid.$ext;
+					}
 				} else {
-					$filename = $fileid.$ext;
+					$embed = 1;
+					$fname = "embed";
 				}
-			} else {
-				$embed = 1;
-				$fname = "embed";
 			}
 			$redirect = 0;
 			if ($mod == 1)
@@ -336,10 +351,11 @@ if (!empty($_POST['mode']))
 				$filename = "url:".$conn->real_escape_string($url);
 				$fname = $conn->real_escape_string($url_title);
 			}
-			$is = $mitsuba->posting->addPost($_POST['board'], $name, $_POST['email'], $_POST['sub'], $_POST['com'], $password, $filename, $fname, $mime, $resto, $md5, $thumb_w, $thumb_h, $spoiler, $embed, $mod_type, $capcode, $raw, $sticky, $lock, $nolimit, $nofile, $fake_id, $cc_text, $cc_color, $redirect);
+			$mitsuba->common->showMsg($lang['img/updating_index'], $lang['img/updating_index']);
+			$is = $mitsuba->posting->addPost($_POST['board'], $name, $_POST['email'], $_POST['sub'], $_POST['com'], $password, $filename, $fname, $mime, $resto, $md5, $thumb_w, $thumb_h, $spoiler, $embed, $raw, $sticky, $lock, $nolimit, $nofile, $fake_id, $cc_text, $cc_style, $cc_icon, $redirect);
 			if ($is == -16)
 			{
-				$this->mitsuba->showMsg($lang['img/error'], $lang['img/board_no_exists']);
+				$mitsuba->common->showMsg($lang['img/error'], $lang['img/board_no_exists']);
 				exit;
 			}
 			break;
@@ -353,13 +369,18 @@ if (!empty($_POST['mode']))
 					if (isset($_COOKIE['password'])) { $password = $_COOKIE['password']; }
 					if (!empty($_POST['pwd'])) { $password = $_POST['pwd']; }
 				}
+				$canDelete = false;
+				if ($mod >= 1)
+				{
+					$canDelete = $mitsuba->admin->checkPermission("post.delete.single");
+				}
 				if ((isset($_POST['onlyimgdel']) && ($_POST['onlyimgdel'] == "on"))) { $onlyimgdel = 1; }
 				foreach ($_POST as $key => $value)
 				{
 					if ($value == "delete")
 					{
 						$keys = explode("%", $key);
-						$done = $mitsuba->posting->deletePost($keys[1], $keys[2], $password, $onlyimgdel, $mod_type);
+						$done = $mitsuba->posting->deletePost($keys[1], $keys[2], $password, $onlyimgdel, $canDelete);
 						if ($done == -1) {
 							echo sprintf($lang["img/post_bad_password"],$keys[1]."/".$keys[2]).".<br />";
 						} elseif ($done == -2) {
@@ -409,12 +430,13 @@ if (!empty($_POST['mode']))
 				$msg = $conn->real_escape_string(htmlspecialchars($_POST['msg']));
 				$email = $conn->real_escape_string(htmlspecialchars($_POST['email']));
 				$ip = $_SERVER['REMOTE_ADDR'];
-				$ban = $mitsuba->common->isBanned($ip, $_POST['board']);
-				$ban_id = $ban['id'];
-				$range = 0;
-				if (!empty($bandata['start_ip'])) { $range = 1; }
-				$conn->query("INSERT INTO appeals (created, ban_id, ip, msg, email, rangeban) VALUES (".time().", ".$ban_id.", '".$ip."', '".$msg."', '".$email."', ".$range.")");
-				echo $lang['img/appeal_sent'];
+				if ($mitsuba->common->verifyBan($ip, $_POST['banid'], $_POST['banrange']))
+				{
+					$ban_id = $_POST['banid'];
+					$range = $_POST['banrange'];
+					$conn->query("INSERT INTO appeals (created, ban_id, ip, msg, email, rangeban) VALUES (".time().", ".$ban_id.", '".$ip."', '".$msg."', '".$email."', ".$range.") ON DUPLICATE KEY UPDATE msg='".$msg."', email='".$email."'");
+					echo $lang['img/appeal_sent'];
+				}
 			}
 			break;
 	}
@@ -423,5 +445,3 @@ if (!empty($_POST['mode']))
 
 }
 ?>
-</body>
-</html>

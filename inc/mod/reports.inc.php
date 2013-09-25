@@ -3,8 +3,10 @@ if (!defined("IN_MOD"))
 {
 	die("Nah, I won't serve that file to you.");
 }
+$mitsuba->admin->reqPermission("reports.view");
 if ((!empty($_GET['cl'])) && ($_GET['cl']==1))
 	{
+$mitsuba->admin->reqPermission("reports.clear.single");
 		if ((!empty($_GET['id'])) && (is_numeric($_GET['id'])))
 		{
 			$conn->query("DELETE FROM reports WHERE id=".$_GET['id']);
@@ -12,7 +14,7 @@ if ((!empty($_GET['cl'])) && ($_GET['cl']==1))
 	}
 	if ((!empty($_GET['m'])) && (!empty($_GET['i'])) && (is_numeric($_GET['i'])))
 	{
-		$mitsuba->admin->reqPermission(2);
+$mitsuba->admin->reqPermission("reports.clear.multiple");
 		switch($_GET['m'])
 		{
 			case "wtr":
@@ -32,7 +34,7 @@ if ((!empty($_GET['cl'])) && ($_GET['cl']==1))
 <?php $mitsuba->admin->ui->startSection($lang['mod/reports']); ?>
 
 <?php
-if ($_SESSION['type'] >= 2)
+if ($mitsuba->admin->checkPermission("reports.clear.all"))
 {
 ?>
 <a href="?/reports/clear_all"><?php echo $lang['mod/clear_all']; ?></a>
@@ -104,7 +106,7 @@ if ($_SESSION['type'] >= 2)
 			echo "<td>".$row['reason']."</td>";
 			echo "<td class='nowrapIP'><center>".$row['reporter_ip']."</center></td>";
 			echo "<td><center>[ <a href='?/reports&cl=1&id=".$row['id']."'>C</a> ] [ <a href='?/bans/add&b=".$row['board']."&p=".$row['reported_post']."'>B</a> "; 
-			if ($_SESSION['type']>=2)
+			if ($mitsuba->admin->checkPermission("reports.clear.multiple"))
 			{
 				echo "/ <a href='?/bans/add&b=".$row['board']."&p=".$row['reported_post']."&d=1'>&</a> / <a href='?/delete_post&b=".$row['board']."&p=".$row['reported_post']."'>D</a> / <a href='?/delete_post&b=".$row['board']."&p=".$row['reported_post']."&f=1'>F</a> ] "; 
 				echo "[ <a href='?/info&ip=".$pdata['ip']."'>N</a> ] <br />";

@@ -3,7 +3,7 @@ if (!defined("IN_MOD"))
 {
 	die("Nah, I won't serve that file to you.");
 }
-$mitsuba->admin->reqPermission(2);
+$mitsuba->admin->reqPermission("post.delete.single");
 		if ((!empty($_GET['b'])) && (!empty($_GET['p'])) && ($mitsuba->common->isBoard($_GET['b'])) && (is_numeric($_GET['p'])))
 		{
 			$imageonly = 0;
@@ -12,7 +12,7 @@ $mitsuba->admin->reqPermission(2);
 			{
 				$imageonly = 1;
 			}
-			$mitsuba->posting->deletePost($_GET['b'], $_GET['p'], "", $imageonly, $_SESSION['type']);
+			$mitsuba->posting->deletePost($_GET['b'], $_GET['p'], "", $imageonly, true);
 			if ($imageonly == 1)
 			{
 			?>

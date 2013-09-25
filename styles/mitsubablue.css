@@ -437,7 +437,6 @@ div.post div.postInfo span.subject {
 
 div.post blockquote.postMessage {
 	display: block;
-	overflow-y: hidden;
 }
 
 blockquote>span.quote {
@@ -1228,6 +1227,30 @@ table:not(#postForm) td.nowrapIP {
 	white-space: nowrap;
 }
 
+.boxcontent > table:nth-child(5) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(2) > span:nth-child(1) {
+	white-space: nowrap;
+}
+
+.boxcontent > table:nth-child(5) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(4) > center:nth-child(1) {
+	min-width: 75px;
+}
+
+.boxcontent > table:nth-child(5) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(2) {
+	text-align: center;
+}
+
+.boxcontent > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(1) > span:nth-child(1) {
+	white-space: nowrap;
+}
+
+.boxcontent > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(1) {
+	text-align: center;
+}
+
+.boxcontent > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(3) {
+	min-width: 75px;
+}
+
 /* GLOBAL */
 
 #logo {
@@ -1633,17 +1656,7 @@ fieldset label {
 	padding-right: 20px;
 }
 
-div.navLinks:nth-child(2) > label:nth-child(5) {
-	float: inherit;
-	display: inline;
-}
-
-div.navLinks:nth-child(8) > label:nth-child(5) {
-	float: inherit;
-	display: inline;
-}
-
-div.navLinks:nth-child(6) > label:nth-child(4) {
+.updateLabel {
 	float: inherit;
 	display: inline;
 }

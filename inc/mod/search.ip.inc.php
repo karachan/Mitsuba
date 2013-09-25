@@ -3,7 +3,7 @@ if (!defined("IN_MOD"))
 {
 	die("Nah, I won't serve that file to you.");
 }
-$mitsuba->admin->reqPermission(2);
+$mitsuba->admin->reqPermission("search.ip");
 		if ((!empty($_GET['ip'])) && (filter_var($_GET['ip'], FILTER_VALIDATE_IP)))
 		{
 			$mitsuba->admin->ui->startSection(sprintf($lang['mod/showing_posts'], $_GET['ip']));
@@ -41,18 +41,14 @@ $mitsuba->admin->reqPermission(2);
 				{
 					$trip = "<center><span class='postertrip'>!".$row['trip']."</span></center>";
 				}
-				if ($row['capcode'] == 1)
+				
+				if (!empty($row['capcode_text']))
 				{
-					echo '<center><span class="nameBlock"><span class="name"><span style="color:#800080">'.$row['name'].'</span></span>'.$trip.' <span class="commentpostername"><span style="color:#800080">## Mod</span></span></span></center>';
-				} elseif ($row['capcode'] == 2)
-				{
-					echo '<center><span class="nameBlock"><span class="name"><span style="color:#FF0000">'.$row['name'].'</span></span>'.$trip.' <span class="commentpostername"><span style="color:#FF0000">## Admin</span></span></span></center>';
-				} elseif ($row['capcode'] == 3)
-				{
-					echo '<center><span class="nameBlock"><span class="name"><span style="color:#FF00FF">'.$row['name'].'</span></span>'.$trip.' <span class="commentpostername"><span style="color:#FF00FF">## Faggot</span></span></span></center>';
+					echo '<span class="name"><span style="'.$row['capcode_style'].'">'.$row['name'].'</span></span>'.$trip.' <span class="commentpostername"><span style="'.$row['capcode_style'].'">## '.$row['capcode_text'].'</span></span>';
 				} else {
-					echo '<center><span class="nameBlock"><span class="name">'.$row['name'].'</span>'.$trip.'</center></span>';
+					echo '<span class="name">'.$row['name'].'</span>'.$trip;
 				}
+			
 			
 				echo "</td>";
 				echo "<td><center>".$row['email']."</center></td>";

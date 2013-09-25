@@ -20,11 +20,11 @@ if (!empty($_GET['mode']))
 {
 	$mode = $_GET['mode'];
 }
-function randomSalt() {
+function randomSalt($length) {
 	$alphabet = 'abcdefghijklmnopqrstuwxyzABCDEFGHIJKLMNOPQRSTUWXYZ0123456789+_-)(*&^%$#@!~|';
 	$pass = array();
 	$alphaLength = strlen($alphabet) - 1;
-	for ($i = 0; $i < 24; $i++) {
+	for ($i = 0; $i < $length; $i++) {
 		$n = mt_rand(0, $alphaLength);
 		$pass[] = $alphabet[$n];
 	}
@@ -48,8 +48,8 @@ switch ($mode)
 		Admin username: <input type="text" name="username" value="root" /><br />
 		Admin password: <input type="text" name="password" value="" /><br />
 		<hr />
-		Secure tripcode salt: <input type="text" name="secure_salt" value="<?php echo randomSalt(); ?>" /><br />
-		ID salt: <input type="text" name="id_salt" value="<?php echo randomSalt(); ?>" /><br />
+		Secure tripcode salt: <input type="text" name="secure_salt" value="<?php echo randomSalt(24); ?>" /><br />
+		ID salt: <input type="text" name="id_salt" value="<?php echo randomSalt(24); ?>" /><br />
 		<input type="submit" value="Install!" />
 		</form>
 		</div>
@@ -116,7 +116,8 @@ switch ($mode)
 		</div>
 			<?php
 					} else {
-						$result = $conn->query("INSERT INTO users (username, password, type, boards) VALUES ('".$conn->real_escape_string($username)."', '".hash("sha512", $password)."', 3, '%')");
+						$salt = $conn->real_escape_string(randomSalt(15));
+						$result = $conn->query("INSERT INTO users (`username`, `password`, `salt`, `group`, `boards`) VALUES ('".$conn->real_escape_string($username)."', '".hash("sha512", $password.$salt)."', '".$salt."', 3, '%')");
 						if (!$result)
 						{
 						?>
@@ -133,6 +134,7 @@ switch ($mode)
 						$handle = fopen("./config.php", "w");
 						$file = '<?php'."\n";
 						$file .= 'date_default_timezone_set("UTC")'.";\n";
+						$file .= '$db_type = "mysqli";'."\n";
 						$file .= '$db_username = "'.$db_username.'"'.";\n";
 						$file .= '$db_password = "'.$db_password.'"'.";\n";
 						$file .= '$db_database = "'.$db_name.'"'.";\n";

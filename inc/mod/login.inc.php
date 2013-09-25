@@ -7,20 +7,27 @@ if ((!empty($_POST['username'])) && (!empty($_POST['password'])))
 		{
 			$username = $conn->real_escape_string($_POST['username']);
 			
-			$result = $conn->query("SELECT * FROM users WHERE username='".$username."' AND type>=1");
+			$result = $conn->query("SELECT * FROM users WHERE username='".$username."'");
 			if ($result->num_rows == 1)
 			{
 				$data = $result->fetch_assoc();
+				$mitsuba->admin->reqPermission("user.login", $data['id']);
 				$password = hash("sha512", $_POST['password'].$data['salt']);
 				if ($data['password'] == $password)
 				{
-					$_SESSION['logged']=1;
-					$_SESSION['id']=$data['id'];
-					$_SESSION['username']=$username;
-					$_SESSION['type']=$data['type'];
-					$_SESSION['boards']=$data['boards'];
-					$_SESSION['ip']=$_SERVER['REMOTE_ADDR'];
-					$_SESSION['cookie_set']=2;
+					$group = $conn->query("SELECT * FROM groups WHERE id=".$data['group']);
+					$gdata = $group->fetch_assoc();
+					$_SESSION['logged'] = 1;
+					$_SESSION['id'] = $data['id'];
+					$_SESSION['username'] = $username;
+					$_SESSION['group'] = $data['group'];
+					$_SESSION['boards'] = $data['boards'];
+					$_SESSION['ip'] = $_SERVER['REMOTE_ADDR'];
+					$_SESSION['capcode_text'] = $gdata['capcode'];
+					$_SESSION['capcode_style'] = $gdata['capcode_style'];
+					$_SESSION['capcode_icon'] = $gdata['capcode_icon'];
+					$_SESSION['group_name'] = $gdata['name'];
+					$_SESSION['cookie_set'] = 2;
 					$mitsuba->admin->logAction(sprintf($lang['log/logged_in'], $_SERVER['REMOTE_ADDR']));
 					header("Location: ./mod.php");
 				} else {

@@ -3,7 +3,7 @@ if (!defined("IN_MOD"))
 {
 	die("Nah, I won't serve that file to you.");
 }
-$mitsuba->admin->reqPermission(3);
+$mitsuba->admin->reqPermission("spamfilter.update");
 		if (!empty($_GET['n']))
 		{
 		$result = $conn->query("SELECT * FROM spamfilter WHERE id=".$conn->real_escape_string($_GET['n']));
@@ -11,7 +11,7 @@ $mitsuba->admin->reqPermission(3);
 		{
 		$info = $result->fetch_assoc();
 		?>
-<?php $mitsuba->admin->ui->startSection($lang['mod/wf_edit']); ?>
+<?php $mitsuba->admin->ui->startSection($lang['mod/sf_edit']); ?>
 
 <form action="?/spamfilter" method="POST">
 <?php $mitsuba->admin->ui->getToken($path); ?>

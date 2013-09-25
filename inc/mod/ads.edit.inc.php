@@ -3,7 +3,7 @@ if (!defined("IN_MOD"))
 {
 	die("Nah, I won't serve that file to you.");
 }
-$mitsuba->admin->reqPermission(3);
+$mitsuba->admin->reqPermission("ads.update");
 if ((!empty($_GET['i'])) && (is_numeric($_GET['i'])))
 {
 	$addata = $conn->query("SELECT * FROM ads WHERE id=".$_GET['i']);
@@ -40,6 +40,7 @@ while ($row = $result->fetch_assoc())
 <option value='underform'<?php if ($addata['position']=="underform") { echo " selected='selected'"; }?>><?php echo $lang['mod/pos_underform']; ?></option>
 <option value='footer'<?php if ($addata['position']=="footer") { echo " selected='selected'"; }?>><?php echo $lang['mod/pos_footer']; ?></option>
 <option value='bottom'<?php if ($addata['position']=="bottom") { echo " selected='selected'"; }?>><?php echo $lang['mod/pos_bottom']; ?></option>
+<option value='rules'<?php if ($addata['position']=="rules") { echo " selected='selected'"; }?>><?php echo $lang['mod/pos_rules']; ?></option>
 </select><br />
 <?php echo $lang['mod/text']; ?>:
 <textarea name="text" cols="70" rows="10"><?php echo $addata['text']; ?></textarea><br />

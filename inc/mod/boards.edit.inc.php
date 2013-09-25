@@ -3,7 +3,7 @@ if (!defined("IN_MOD"))
 {
 	die("Nah, I won't serve that file to you.");
 }
-$mitsuba->admin->reqPermission(3);
+$mitsuba->admin->reqPermission("boards.update");
 		if ($mitsuba->common->isBoard($_GET['board']))
 		{
 			$data = $mitsuba->common->getBoardData($_GET['board']);
@@ -43,7 +43,7 @@ switch ($data['type'])
 </b>
 <?php if (($data['type'] == "imageboard") || ($data['type'] == "textboard") || ($data['type'] == "fileboard") || ($data['type'] == "linkboard")) { ?>
 <?php echo $lang['mod/board_directory']; ?>: <input disabled type="text" name="short" maxlength=10 value="<?php echo $data['short']; ?>" /><br />
-<?php echo $lang['mod/board_name']; ?>: <input type="text" name="name" maxlength=40 value="<?php echo $data['name']; ?>" /><br />
+<?php echo $lang['mod/board_name']; ?>: <input type="text" name="name" maxlength=100 value="<?php echo $data['name']; ?>" /><br />
 <?php echo $lang['mod/board_short']; ?>: <input type="text" name="des" maxlength=100 value="<?php echo $data['des']; ?>" /><br />
 <?php echo $lang['mod/board_msg']; ?>: <br /><textarea cols=70 rows=7 name="msg"><?php echo $data['message']; ?></textarea><br />
 <?php echo $lang['mod/board_limit']; ?>: <input type="text" name="limit" maxlength=9 value="<?php echo $data['bumplimit']; ?>" /><br />

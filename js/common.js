@@ -39,7 +39,6 @@ $(document).ready(function () {
 	}
 	if ($(".postingMode").length == 0) //outside thread
 	{
-		collapseLongPosts(10);
 		if (localStorage.getItem("o_fastreply") == 1)
 		{
 			addFastReply("body", 0);
@@ -79,15 +78,15 @@ $(document).ready(function () {
 
 	addSettings();
 
-	if ((typeof $.cookie("in_mod") !== "undefined") && ($.cookie("in_mod")>=1))
+	if (typeof $.cookie("in_mod") !== "undefined")
 	{
 		adminStuff("body");
 	}
 	var hash = window.location.href.split(/#/);
 	if (hash[1] && hash[1].match(/q[0-9]+$/)) {
 		var textarea = $("#postForm textarea[name='com']")[0];
-		$(textarea).val($(textarea).val()+'>>'+hash[1].match(/q([0-9]+)$/)[1]+'\n'); 
-		$(textarea).focus();
+		var textVal = $(textarea).val();
+		$(textarea).focus().val("").val(textVal+'>>'+hash[1].match(/q([0-9]+)$/)[1]+'\n'); 
 	}
 });
 
@@ -100,13 +99,15 @@ function addLoader()
 	var nextPageEl = $(strong).parent().next();
 	if (nextPageEl.length >= 1)
 	{
+
+		var nocache = new Date().getTime();
 		$(window).scroll(function() {   
 			if($(window).scrollTop() + $(window).height() == $(document).height()) {
 				$(".pagelist").css("opacity", "0.5");
 				$(window).unbind('scroll');
 				$.ajax({
 				type: 'get',
-				url: "./"+$(nextPageEl).html()+".html",
+				url: "./"+$(nextPageEl).html()+".html?c="+nocache,
 				success: function(data, textStatus, xhr){
 					$(".pagelist").css("opacity", "");
 					var html = xhr.responseText;
@@ -341,7 +342,7 @@ function updateThread(isAuto)
 function addThreadUpdater()
 {
 	normaltitle = document.title;
-	$(".navLinks").append(" [<a href='#update' class='updateLink'>Update</a>] [<label><input type='checkbox' class='updateCheck'>Auto</label>] <span class='uinfo'></span> <span class='autocount'></span>");
+	$(".navLinks").append(" [<a href='#update' class='updateLink'>Update</a>] [<label class='updateLabel'><input type='checkbox' class='updateCheck'>Auto</label>] <span class='uinfo'></span> <span class='autocount'></span>");
 	lastRead = $(".post:last").attr("id").substr(1);
 	$(".updateLink").click(function () {
 		updateThread(false);
@@ -363,15 +364,14 @@ function addThreadUpdater()
 function addQuotelinks()
 {
 	$(".quotePost").unbind("click");
-	$(".quotePost").click(function () {
+	$(".quotePost").click(function(e) {
 		try {
-			event.preventDefault();
 			var id = $(this).attr("id").substr(1);
 			var textarea = $("#postForm textarea[name='com']")[0];
-			$(textarea).val($(textarea).val()+'>>'+id+'\n'); 
-			$(textarea).focus();
+			var textVal = $(textarea).val();
+			$(textarea).focus().val("").val(textVal+'>>'+id+'\n');
+			e.preventDefault();
 		} catch (ex) {
-			
 		}
 	});
 }
@@ -447,8 +447,8 @@ function addFastReply(parent, thread)
 function addPostpreview(parent)
 {
 	$(parent).find(".quotelink").off();
-	$(parent).find(".quotelink").mouseenter(function () { showPostPreview(this); });
-	$(parent).find(".quotelink").mouseleave(function () { hidePostPreview(this); });
+	$(parent).find(".quotelink").mouseenter(function () { $(this).data("chuj",1);showPostPreview(this);	});
+	$(parent).find(".quotelink").mouseleave(function () { $(this).data("chuj",0);hidePostPreview(this); });
 }
 
 function addBacklinks(parent)
@@ -478,28 +478,6 @@ function addBacklinks(parent)
 		} catch(ex) {
 			
 		}
-	});
-}
-
-function collapseLongPosts(lines) {
-	var $obj = $(".opContainer .postMessage");
-	$obj.first().after('<blockquote style="display:none">i</blockquote>');
-	var lineHeight = parseInt($obj.next().css("height"),10);
-	$obj.next().remove();
-	var fontSize = parseInt($obj.css("font-size"),10);
-	var maxHeight = lines * lineHeight;
-
-	$obj.each(function() {
-		if($(this).css("height").replace('px','') > maxHeight) {
-			$(this).attr("style","position:relative;height:" + maxHeight + "px");
-			$(this).after('<a style="position:relative;top:-'+fontSize+'px" class="showFullPost" href="#">Post too long. Click here to expand.</a>');
-		}
-	});
-
-	$(".showFullPost").click(function(){
-		$(this).prev().removeAttr("style");
-		$(this).hide();
-		return false;
 	});
 }
 
@@ -551,6 +529,11 @@ function addThreadExpander(parent)
 				{
 					addFastReply(tid, 1);
 				}
+				if (typeof $.cookie("in_mod") !== "undefined")
+				{
+					adminStuff(tid);
+					console.log(tid);
+				}
 				}
 			});
 		});
@@ -585,28 +568,31 @@ function showPostPreview( el )
 		off.left = off.left + $(el).width();
 		off.top = off.top - $("#quote-preview").height()/2
 		$("#quote-preview").css("display", "block");
-				$("#quote-preview").find("a").each( function () { if ($(this).attr("href") !== null) { $(this).attr("href", absolutizeURI(href, $(this).attr("href"))); } } );
-				$("#quote-preview").find("img").each( function () { $(this).attr("src", absolutizeURI(href, $(this).attr("src")));  } );
+		$("#quote-preview").find("a").each( function () { if ($(this).attr("href") !== null) { $(this).attr("href", absolutizeURI(href, $(this).attr("href"))); } } );
+		$("#quote-preview").find("img").each( function () { $(this).attr("src", absolutizeURI(href, $(this).attr("src")));  } );
 		$("#quote-preview").offset(off);
 	} else {
 		$.ajax({
 			type: 'get',
 			url: href,
 			success: function(data, textStatus, xhr){
-				var html = xhr.responseText;
-				var nodes = $.parseHTML( html );
-				var hr = $(el).attr("href");
-				var postid = hr.substr(hr.indexOf('#'));
-				$("#quote-preview").html($(postid, nodes).html());
-				var off = $( el ).offset();
-				off.left = off.left + $(el).width();
-				off.top = off.top - $("#quote-preview").height()/2
-				$("#quote-preview").css("display", "block");
-				$("#quote-preview").find("a").each( function () { if ($(this).attr("href") !== null) { $(this).attr("href", absolutizeURI(href, $(this).attr("href"))); } } );
-				$("#quote-preview").find("img").each( function () { $(this).attr("src", absolutizeURI(href, $(this).attr("src")));  } );
-				$("#quote-preview").offset(off);
+				if($(el).data("chuj")) {
+					var html = xhr.responseText;
+					var nodes = $.parseHTML( html );
+					var hr = $(el).attr("href");
+					var postid = hr.substr(hr.indexOf('#'));
+					$("#quote-preview").html($(postid, nodes).html());
+					var off = $( el ).offset();
+					off.left = off.left + $(el).width();
+					off.top = off.top - $("#quote-preview").height()/2
+					$("#quote-preview").css("display", "block");
+					$("#quote-preview").find("a").each( function () { if ($(this).attr("href") !== null) { $(this).attr("href", absolutizeURI(href, $(this).attr("href"))); } } );
+					$("#quote-preview").find("img").each( function () { $(this).attr("src", absolutizeURI(href, $(this).attr("src")));  } );
+					$("#quote-preview").offset(off);
+				}
 			}
 		});
+		
 	}
 }
 
@@ -706,150 +692,284 @@ function addImgExpand(parent)
 }
 
 var api_url = "../mod.php?";
+	var permissions = [];
 function adminStuff(parent)
 {
-	var adm_type = $.cookie("in_mod");
+	var permissions_raw = $.cookie("in_mod");
+	permissions['post.ignorenoname'] = permissions_raw.charAt(0);
+	permissions['post.ignoresizelimit'] = permissions_raw.charAt(1);
+	permissions['post.raw'] = permissions_raw.charAt(2);
+	permissions['post.antibump'] = permissions_raw.charAt(3);
+	permissions['post.sticky'] = permissions_raw.charAt(4);
+	permissions['post.closed'] = permissions_raw.charAt(5);
+	permissions['post.nofile'] = permissions_raw.charAt(6);
+	permissions['post.fakeid'] = permissions_raw.charAt(7);
+	permissions['post.ignorecaptcha'] = permissions_raw.charAt(8);
+	permissions['post.capcode'] = permissions_raw.charAt(9);
+	permissions['post.customcapcode'] = permissions_raw.charAt(10);
+	permissions['post.viewip'] = permissions_raw.charAt(11);
+	permissions['post.delete.single'] = permissions_raw.charAt(12);
+	permissions['post.edit'] = permissions_raw.charAt(13);
+	permissions['bans.add'] = permissions_raw.charAt(14);
+	permissions['bans.add.request'] = permissions_raw.charAt(15);
+	/*
+		post.ignorenoname
+		post.ignoresizelimit
+		post.raw
+		post.antibump
+		post.sticky
+		post.closed
+		post.nofile
+		post.fakeid
+		post.ignorecaptcha
+		post.capcode
+		post.customcapcode
+		post.viewip
+		post.delete.single
+		post.edit
+		bans.add
+		bans.add.request
+	*/
 	if ($("body").hasClass("modPanel") != true)
 	{
-		var old_action = $("#postform").attr("action");
-		$("#postform").attr("action", old_action+"?mod=2");
-		var old_actiondel = $("#delform").attr("action");
-		$("#delform").attr("action", old_actiondel+"?mod=2");
-		if (adm_type >= 2)
-		{
-			if ($("#postform input[name='name']").length == 0)
+		if(parent == "body") {
+			var old_action = $("#postform").attr("action");
+			$("#postform").attr("action", old_action+"?mod=2");
+			var old_actiondel = $("#delform").attr("action");
+			$("#delform").attr("action", old_actiondel+"?mod=2");
+			if ((permissions['post.ignorenoname']==1) && ($("#postform input[name='name']").length == 0))
 			{
 				$("#postform input[name='email']").parent().parent().before('<tr> \
-					<td>Name</td> \
-					<td><input name="name" type="text" /></td> \
-					</tr> \
-					<tr> \
+						<td>Name</td> \
+						<td><input name="name" type="text" /></td> \
+						</tr>');
+			}
+			if (permissions['post.fakeid']==1)
+			{
+				$("#postform input[name='email']").parent().parent().before('<tr> \
 					<td>Fake ID</td> \
 					<td><input name="fake_id" type="text" /></td> \
 					</tr>');
+			}
+			if (permissions['post.ignorecaptcha']==1)
+			{
 				$("#captcha").css("display", "none");
-			} else {
-				$("#postform input[name='email']").parent().parent().before('<tr> \
-					<td>Fake ID</td> \
-					<td><input name="fake_id" type="text" /></td> \
-					</tr>');
 			}
-			var customc = "";
-			if (adm_type==3)
+			if ((permissions['post.customcapcode']==1) || (permissions['post.capcode']==1))
 			{
-				customc = '<input type="radio" name="capcode" value=2 id="custom_cc" />Custom capcode \
-						<div style="display: none;" id="cc_fields" value="#FF0000">Text: <input type="text" name="cc_text" /><br /> \
-						Color: <input type="text" name="cc_color" /></div>';
+				var customc = "";
+				if (permissions['post.customcapcode']==1)
+				{
+					customc = '<input type="radio" name="capcode" value=2 id="custom_cc" />Custom capcode \
+							<div style="display: none;" id="cc_fields" value="#FF0000">Text: <input type="text" name="cc_text" /><br /> \
+							Style: <input type="text" name="cc_style" value="color: "/></div>';
+				}
+				$("#postform #postPassword").parent().parent().after('<tr> \
+							<td>Capcode</td> \
+							<td id="capcode_td"><input type="radio" name="capcode" value=0 checked />No capcode<input type="radio" name="capcode" value=1 />Capcode'+customc+' \
+						</td></tr>');
+				
+				if (permissions['post.customcapcode']==1)
+				{
+					$("input[name='capcode']").change(function() {
+						if ($("#custom_cc").prop("checked"))
+						{
+							$("#cc_fields").css("display", "");
+						} else {
+							$("#cc_fields").css("display", "none");
+							$("#cc_fields input").val("");
+						}
+						});
+				}
+
 			}
-			$("#postform #postPassword").parent().parent().after('<tr> \
-						<td>Mod</td> \
-						<td><input type="checkbox" name="raw" value=1 />Raw HTML<input type="checkbox" name="sticky" value=1 />Sticky<input type="checkbox" name="lock" value=1 />Locked<br /> \
-					<input type="checkbox" name="nolimit" value=1 selected/>Ignore bump limit<input type="checkbox" name="ignoresizelimit" value=1 />Ignore filesizelimit<input type="checkbox" name="nofile" value=1 />No file</td> \
-					<tr> \
-						<td>Capcode</td> \
-						<td id="capcode_td"><input type="radio" name="capcode" value=0 checked />No capcode<input type="radio" name="capcode" value=1 />Capcode'+customc+' \
-					</td></tr>');
-			if (adm_type==3)
+			var mod = '<tr> \
+							<td>Mod</td> \
+							<td>';
+			if (permissions['post.raw']==1)
 			{
-				$("input[name='capcode']").change(function() {
-					if ($("#custom_cc").prop("checked"))
-					{
-						$("#cc_fields").css("display", "");
-					} else {
-						$("#cc_fields").css("display", "none");
-						$("#cc_fields input").val("");
-					}
-					});
+				mod += '<input type="checkbox" name="raw" value=1 />Raw HTML';
 			}
-
+			if (permissions['post.sticky']==1)
+			{
+				mod += '<input type="checkbox" name="sticky" value=1 />Sticky';
+			}
+			if (permissions['post.closed']==1)
+			{
+				mod += '<input type="checkbox" name="lock" value=1 />Locked<br />';
+			}
+			if (permissions['post.ignorebumplimit']==1)
+			{
+				mod += '<input type="checkbox" name="nolimit" value=1 selected/>Ignore bump limit';
+			}
+			if (permissions['post.ignoresizelimit']==1)
+			{
+				mod += '<input type="checkbox" name="ignoresizelimit" value=1 />Ignore filesizelimit';
+			}
+			if (permissions['post.nofile']==1)
+			{
+				mod += '<input type="checkbox" name="nofile" value=1 />No file';
+			}
+			$("#postform #postPassword").parent().parent().after(mod+'</td></tr>');
+			if ($(".postingMode").length != 0)
+			{
+				api_url = "../../mod.php?";
+			}
 		}
-		if ($(".postingMode").length != 0)
-		{
-			api_url = "../../mod.php?";
-		}
-		$(".thread").each(function () {
-			var opIp = "";
-			$(this).find(".opContainer .postInfo").each(function () {
-				var id = $(this).attr("id").substr(2);
-				var board = $('meta[property="og:boardname"]').attr('content');
-				if (adm_type >= 2)
+		var opIp = "";
+		$(parent).find(".opContainer .postInfo").each(function () {
+			var id = $(this).attr("id").substr(2);
+			var board = $('meta[property="og:boardname"]').attr('content');
+			var ac = "";
+			var bansdel = "";
+			var edit = "";
+			var threadcontrols = "";
+			if (permissions['bans.add']==1)
+			{
+				bansdel = '[<a href="'+api_url+'/bans/add&b='+board+'&p='+id+'">B</a>';
+				if (permissions['post.delete.single']==1)
 				{
-					var more = "";
-					if ($(this).siblings(".file").length >= 1)
-					{
-						more = ' / <a href="'+api_url+'/delete_post&b='+board+'&p='+id+'&f=1">F</a>]';
-					} else {
-						more = ']';
-					}
-					if (adm_type >= 3)
-					{
-						more = more+' [<a href="'+api_url+'/edit_post&b='+board+'&p='+id+'" class="edit">E</a>]'
-					}
-					$(this).children(".postNum").after(' <span class="adminControls">[<a href="'+api_url+'/sticky/toggle&b='+board+'&t='+id+'">S</a> / <a href="'+api_url+'/locked/toggle&b='+board+'&t='+id+'">L</a> / <a href="'+api_url+'/antibump/toggle&b='+board+'&t='+id+'">A</a>] [<a href="'+api_url+'/bans/add&b='+board+'&p='+id+'">B</a> / <a href="'+api_url+'/bans/add&b='+board+'&p='+id+'&d=1">&</a> / <a href="'+api_url+'/delete_post&b='+board+'&p='+id+'">D</a>'+more+'</span>');
-					var el = this;
-					$.ajax({
-						type: 'get',
-						url: api_url+"/api/admin_stuff&b="+board+"&p="+id,
-						success: function(data, textStatus, xhr){
-							var json = $.parseJSON(xhr.responseText);
-							if (json.error != 404)
-							{
-								opIp = json.ip;
-								if (json.sage == 1)
-								{
-									$(el).children(".postNum").after(' <span style="color: red;">[A]</span> ');
-								}
-								$(el).children(".nameBlock").after(' <span class="posterIp">(<a href="http://whatismyipaddress.com/ip/'+json.ip+'" target="_blank">'+json.ip+'</a>)</span> [<a href="'+api_url+'/info&ip='+json.ip+'">N</a>] <b style="color: red;">[ OP ]</b>');
-							}
-						}
-					});
-				} else {
-					$(this).children(".postNum").after(' <span class="adminControls">[<a href="'+api_url+'/bans/add&b='+board+'&p='+id+'">B</a>]</span>');
+					bansdel += ' / <a href="'+api_url+'/bans/add&b='+board+'&p='+id+'&d=1">&</a>';
 				}
-			});
+			} else if (permissions['bans.add.request']==1)
+			{
+				bansdel = '[<a href="'+api_url+'/bans/add&b='+board+'&p='+id+'">B</a>';
+			}
+			if (permissions['post.delete.single']==1)
+			{
+				if (bansdel == "")
+				{
+					bansdel = "[";
+				} else {
+					bansdel += " / ";
+				}
+				bansdel += '<a href="'+api_url+'/delete_post&b='+board+'&p='+id+'">D</a>';
+				if ($(this).siblings(".file").length >= 1)
+				{
+					bansdel += ' / <a href="'+api_url+'/delete_post&b='+board+'&p='+id+'&f=1">F</a>]';
+				} else {
+					bansdel += ']';
+				}
+			}
+			if (permissions['post.edit']==1)
+			{
+				edit = ' [<a href="'+api_url+'/edit_post&b='+board+'&p='+id+'" class="edit">E</a>] ';
+			}
+			if (permissions['post.sticky']==1)
+			{
+				if (threadcontrols == "")
+				{
+					threadcontrols = '[<a href="'+api_url+'/sticky/toggle&b='+board+'&t='+id+'">S</a>';
+				} else {
+					threadcontrols += ' / <a href="'+api_url+'/sticky/toggle&b='+board+'&t='+id+'">S</a>';
+				}
+			}
+			if (permissions['post.closed']==1)
+			{
+				if (threadcontrols == "")
+				{
+					threadcontrols = '[<a href="'+api_url+'/locked/toggle&b='+board+'&t='+id+'">L</a>';
+				} else {
+					threadcontrols += ' / <a href="'+api_url+'/locked/toggle&b='+board+'&t='+id+'">L</a>';
+				}
+			}
+			if (permissions['post.antibump']==1)
+			{
+				if (threadcontrols == "")
+				{
+					threadcontrols = '[<a href="'+api_url+'/antibump/toggle&b='+board+'&t='+id+'">A</a>';
+				} else {
+					threadcontrols += ' / <a href="'+api_url+'/antibump/toggle&b='+board+'&t='+id+'">A</a>';
+				}
+			}
+			threadcontrols += ']';
+			ac = bansdel+edit+threadcontrols;
+			$(this).children(".postNum").after(' <span class="adminControls">'+ac+'</span>');
+			var el = this;
+			if (permissions['post.viewip']==1)
+			{
+				$.ajax({
+					type: 'get',
+					url: api_url+"/api/admin_stuff&b="+board+"&p="+id,
+					success: function(data, textStatus, xhr){
+						var json = $.parseJSON(xhr.responseText);
+						if (json.error != 404)
+						{
+							opIp = json.ip;
+							if (json.sage == 1)
+							{
+								$(el).children(".postNum").after(' <span style="color: red;">[A]</span> ');
+							}
+							$(el).children(".nameBlock").after(' <span class="posterIp">(<a href="http://whatismyipaddress.com/ip/'+json.ip+'" target="_blank">'+json.ip+'</a>)</span> [<a href="'+api_url+'/info&ip='+json.ip+'">N</a>] <b style="color: red;">[ OP ]</b>');
+						}
+					}
+				});
+			}
+		});
 
-			$(this).find(".replyContainer .postInfo").each(function () {
-				var id = $(this).attr("id").substr(2);
-				var board = $('meta[property="og:boardname"]').attr('content');
-				if (adm_type >= 2)
+		$(parent).find(".replyContainer .postInfo").each(function () {
+			var id = $(this).attr("id").substr(2);
+			var board = $('meta[property="og:boardname"]').attr('content');
+			var ac = "";
+			var bansdel = "";
+			var edit = "";
+			if (permissions['bans.add']==1)
+			{
+				bansdel = '[<a href="'+api_url+'/bans/add&b='+board+'&p='+id+'">B</a>';
+				if (permissions['post.delete.single']==1)
 				{
-					var more = "";
-					if ($(this).siblings(".file").length >= 1)
-					{
-						more = ' / <a href="'+api_url+'/delete_post&b='+board+'&p='+id+'&f=1">F</a>]';
-					} else {
-						more = ']';
-					}
-					if (adm_type >= 3)
-					{
-						more = more+' [<a href="'+api_url+'/edit_post&b='+board+'&p='+id+'" class="edit">E</a>]'
-					}
-					$(this).children(".postNum").after(' <span class="adminControls">[<a href="'+api_url+'/bans/add&b='+board+'&p='+id+'">B</a> / <a href="'+api_url+'/bans/add&b='+board+'&p='+id+'&d=1">&</a> / <a href="'+api_url+'/delete_post&b='+board+'&p='+id+'">D</a>'+more+'</span>');
-					var el = this;
-					$.ajax({
-						type: 'get',
-						url: api_url+"/api/admin_stuff&b="+board+"&p="+id,
-						success: function(data, textStatus, xhr){
-							var json = $.parseJSON(xhr.responseText);
-							if (json.error != 404)
-							{
-								var op = "";
-								if (json.sage == 1)
-								{
-									$(el).children(".postNum").after(' <span style="color: red;">[A]</span> ');
-								}
-								if (json.ip == opIp)
-								{
-									op = ' <b style="color: red;">[ OP ]</b>';
-								}
-								$(el).children(".nameBlock").after(' <span class="posterIp">(<a href="http://whatismyipaddress.com/ip/'+json.ip+'" target="_blank">'+json.ip+'</a>)</span> [<a href="'+api_url+'/info&ip='+json.ip+'">N</a>]'+op);
-							}
-						}
-					});
-				} else {
-					$(this).children(".postNum").after(' <span class="adminControls">[<a href="'+api_url+'/bans/add&b='+board+'&p='+id+'">B</a>]</span>');
+					bansdel += ' / <a href="'+api_url+'/bans/add&b='+board+'&p='+id+'&d=1">&</a>';
 				}
-			});
+			} else if (permissions['bans.add.request']==1)
+			{
+				bansdel = '[<a href="'+api_url+'/bans/add&b='+board+'&p='+id+'">B</a>';
+			}
+			if (permissions['post.delete.single']==1)
+			{
+				if (bansdel == "")
+				{
+					bansdel = "[";
+				} else {
+					bansdel += " / ";
+				}
+				bansdel += '<a href="'+api_url+'/delete_post&b='+board+'&p='+id+'">D</a>';
+				if ($(this).siblings(".file").length >= 1)
+				{
+					bansdel += ' / <a href="'+api_url+'/delete_post&b='+board+'&p='+id+'&f=1">F</a>]';
+				} else {
+					bansdel += ']';
+				}
+			}
+			if (permissions['post.edit']==1)
+			{
+				edit = ' [<a href="'+api_url+'/edit_post&b='+board+'&p='+id+'" class="edit">E</a>]';
+			}
+			ac = bansdel+edit;
+			$(this).children(".postNum").after(' <span class="adminControls">'+ac+'</span>');
+			var el = this;
+			if (permissions['post.viewip']==1)
+			{
+				$.ajax({
+					type: 'get',
+					url: api_url+"/api/admin_stuff&b="+board+"&p="+id,
+					success: function(data, textStatus, xhr){
+						var json = $.parseJSON(xhr.responseText);
+						if (json.error != 404)
+						{
+							var op = "";
+							if (json.sage == 1)
+							{
+								$(el).children(".postNum").after(' <span style="color: red;">[A]</span> ');
+							}
+							if (json.ip == opIp)
+							{
+								op = ' <b style="color: red;">[ OP ]</b>';
+							}
+							$(el).children(".nameBlock").after(' <span class="posterIp">(<a href="http://whatismyipaddress.com/ip/'+json.ip+'" target="_blank">'+json.ip+'</a>)</span> [<a href="'+api_url+'/info&ip='+json.ip+'">N</a>]'+op);
+						}
+					}
+				});
+			}
 		});
 		$("a").each( function () {
 			if ($(this).attr("href") != null)
@@ -1186,7 +1306,8 @@ function addToWatched(board, id)
 
 	function getPost(board, id)
 	{
-		return $.ajax({url: '../'+board+'/res/'+id+'.html'});
+		var nocache = new Date().getTime();
+		return $.ajax({url: '../'+board+'/res/'+id+'.html?c='+nocache});
 	}
 
 	var numberOfPosts = getPost(board, id);

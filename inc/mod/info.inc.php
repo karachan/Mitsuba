@@ -3,12 +3,13 @@ if (!defined("IN_MOD"))
 {
 	die("Nah, I won't serve that file to you.");
 }
+$mitsuba->admin->reqPermission("info.view");
 if ((!empty($_GET['ip'])) && (filter_var($_GET['ip'], FILTER_VALIDATE_IP)))
 		{
 		?>
 <?php $mitsuba->admin->ui->startSection(sprintf($lang['mod/ip_info'], $_GET['ip'])); ?>
 <?php
-if ($_SESSION['type']>=2)
+if ($mitsuba->admin->checkPermission("search.ip"))
 {
 ?>
 <a href="?/search/ip&ip=<?php echo $_GET['ip']; ?>"><?php echo $lang['mod/search_ip']; ?></a><br />
@@ -50,7 +51,7 @@ if ($row['boards']=="%")
 } else {
 	echo "<td><center>".$row['boards']."</center></td>";
 }
-if ($_SESSION['type']>=2)
+if ($mitsuba->admin->checkPermission("bans.delete"))
 {
 echo "<td><center><a href='?/bans&del=1&b=".$row['id']."'>".$lang['mod/delete']."</a></center></td>";
 } else {

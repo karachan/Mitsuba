@@ -15,7 +15,6 @@ class Admin
 	public $ui;
 	public $users;
 
-
 	function __construct($connection, &$mitsuba) {
 		$this->conn = $connection;
 		$this->mitsuba = $mitsuba;
@@ -31,9 +30,53 @@ class Admin
 		$this->users = new \Mitsuba\Admin\Users($this->conn, $this->mitsuba);
 	}
 
-	function reqPermission($level)
+	function reqPermission($permission, $uid = -1)
 	{
-		if ($_SESSION['type']<$level) { die(); }
+		$groupid = 0;
+		if ($uid != -1)
+		{
+			if (!is_numeric($uid))
+			{
+				die("Insufficient permissions");
+			}
+			$user = $this->conn->query("SELECT * FROM users WHERE id=".$uid);
+			if ($user->num_rows != 1)
+			{
+				die("Insufficient permissions");
+			}
+			$userrow = $user->fetch_assoc();
+			$groupid = $userrow['group'];
+		} else {
+			$groupid = $_SESSION['group'];
+		}
+		if (!$this->checkPermission($permission, $groupid))
+		{
+			die("Insufficient permissions");
+		}
+	}
+
+	function checkPermission($permission, $groupid = false)
+	{
+		if ($groupid == false)
+		{
+			if (empty($_SESSION['group']))
+			{
+				return false;
+			}
+			$groupid = $_SESSION['group'];
+		}
+		$p = explode(".", $permission);
+		$permission = $this->conn->query("SELECT * FROM group_permissions INNER JOIN permissions ON group_permissions.pid=permissions.id AND permissions.name='".$this->conn->real_escape_string($permission)."' WHERE gid=".$groupid);
+		if ($permission->num_rows == 1)
+		{
+			return true;
+		} elseif (count($p) > 1)
+		{
+			array_pop($p);
+			return $this->checkPermission(implode(".", $p), $groupid);
+		} else {
+			return false;
+		}
 	}
 
 	function appendToPost($board, $postid, $text)
@@ -73,7 +116,7 @@ class Admin
 		{
 			die("NOT LOGGED IN");
 		}
-		if (($_SESSION['boards'] != "%") && ($_SESSION['type'] != 2))
+		if ($_SESSION['boards'] != "%")
 		{
 			$boards = explode(",", $_SESSION['boards']);
 			if (in_array($board, $boards))

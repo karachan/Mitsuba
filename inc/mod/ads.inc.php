@@ -3,12 +3,13 @@ if (!defined("IN_MOD"))
 {
 	die("Nah, I won't serve that file to you.");
 }
-$mitsuba->admin->reqPermission(3);
+$mitsuba->admin->reqPermission("ads.list");
 if (isset($_POST['mode']))
 {
 	switch($_POST['mode'])
 	{
 		case "add":
+			$mitsuba->admin->reqPermission("ads.add");
 			$mitsuba->admin->ui->checkToken($_POST['token']);
 			$shown = 0;
 			if ((!empty($_POST['shown'])) && (is_numeric($_POST['shown'])) && ($_POST['shown']==1)) { $shown = 1; }
@@ -22,6 +23,7 @@ if (isset($_POST['mode']))
 			echo $conn->error;
 			break;
 		case "edit":
+			$mitsuba->admin->reqPermission("ads.update");
 			$mitsuba->admin->ui->checkToken($_POST['token']);
 			if (is_numeric($_POST['id']))
 			{
@@ -43,6 +45,7 @@ if (isset($_GET['mode']))
 	switch($_GET['mode'])
 	{
 		case "delete":
+			$mitsuba->admin->reqPermission("ads.delete");
 			if (is_numeric($_GET['i']))
 			{
 				$conn->query("DELETE FROM ads WHERE id=".$_GET['i']);
@@ -92,6 +95,9 @@ while ($row = $result->fetch_assoc())
 			break;
 		case "bottom":
 			echo $lang['mod/pos_bottom'];
+			break;
+		case "rules":
+			echo $lang['mod/pos_rules'];
 			break;
 		default:
 			echo "<b>WRONG POSITION: ".$row['position']."</b>";

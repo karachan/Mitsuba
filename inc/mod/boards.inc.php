@@ -3,14 +3,14 @@ if (!defined("IN_MOD"))
 {
 	die("Nah, I won't serve that file to you.");
 }
-$mitsuba->admin->reqPermission(3);
+$mitsuba->admin->reqPermission("boards.view");
 ?>
 <?php $mitsuba->admin->ui->startSection($lang['mod/create_new_board']); ?>
 
 <form action="?/boards/add" method="POST">
 <?php $mitsuba->admin->ui->getToken($path); ?>
 <?php echo $lang['mod/board_directory']; ?>: <input type="text" name="short" maxlength=10 /><br />
-<?php echo $lang['mod/board_name']; ?>: <input type="text" name="name" maxlength=40 /><br />
+<?php echo $lang['mod/board_name']; ?>: <input type="text" name="name" maxlength=100 /><br />
 <?php echo $lang['mod/board_short']; ?>: <input type="text" name="des" maxlength=100 /><br />
 <?php echo $lang['mod/board_msg']; ?>: <br /><textarea cols=70 rows=7 name="msg"></textarea><br />
 <?php echo $lang['mod/board_type']; ?>: <select name="type">
