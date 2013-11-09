@@ -35,10 +35,10 @@ $result = $conn->query("SELECT * FROM announcements WHERE mod_id=".$_SESSION['id
 while ($row = $result->fetch_assoc())
 {
 echo "<tr>";
-echo "<td><center>".$row['title']."</center></td>";
-echo "<td><center>".date("d/m/Y @ H:i", $row['date'])."</center></td>";
-echo "<td><center><a href='?/announcements/edit&b=".$row['id']."'>".$lang['mod/edit']."</a></center></td>";
-echo "<td><center><a href='?/announcements/delete&b=".$row['id']."'>".$lang['mod/delete']."</a></center></td>";
+echo "<td class='text-center'>".$row['title']."</td>";
+echo "<td class='text-center text-nowrap'>".date("d/m/Y @ H:i", $row['date'])."</td>";
+echo "<td class='text-center'><a href='?/announcements/edit&b=".$row['id']."'>".$lang['mod/edit']."</a></td>";
+echo "<td class='text-center'><a href='?/announcements/delete&b=".$row['id']."'>".$lang['mod/delete']."</a></td>";
 echo "</tr>";
 }
 ?>
@@ -51,7 +51,7 @@ $mitsuba->admin->ui->checkToken($_POST['token']);
 		$text = processEntry($conn, $_POST['text']);
 		$who = $_SESSION['username'];
 		if (!empty($_POST['who'])) { $who = $_POST['who']; }
-		$conn->query("INSERT INTO announcements (date, who, title, text, mod_id) VALUES (".time().", '".$who."', '".$conn->real_escape_string(htmlspecialchars($_POST['title']))."', '".$text."', ".$_SESSION['id'].");");
+		$conn->query("INSERT INTO announcements (`date`, `who`, `title`, `text`, `mod_id`) VALUES (".time().", '".$who."', '".$conn->real_escape_string(htmlspecialchars($_POST['title']))."', '".$text."', ".$_SESSION['id'].");");
 		?>
 <?php $mitsuba->admin->ui->startSection($lang['mod/post_added']); ?>
 <a href="?/announcements"><?php echo $lang['mod/back']; ?></a><?php $mitsuba->admin->ui->endSection(); ?>

@@ -1,16 +1,12 @@
 <?php
-interface IPlugin {
-	public function __construct($conn, &$mitsuba);
-	public function getName();
-	public function getUpdateURL();
-}
-
 class Admin
 {
 	private $conn;
 	private $mitsuba;
+	private $user_permissions;
 	public $bans;
 	public $boards;
+	public $groups;
 	public $links;
 	public $ui;
 	public $users;
@@ -22,6 +18,8 @@ class Admin
 		$this->bans = new \Mitsuba\Admin\Bans($this->conn, $this->mitsuba);
 		include("admin.boards.php");
 		$this->boards = new \Mitsuba\Admin\Boards($this->conn, $this->mitsuba);
+		include("admin.groups.php");
+		$this->groups = new \Mitsuba\Admin\Groups($this->conn, $this->mitsuba);
 		include("admin.links.php");
 		$this->links = new \Mitsuba\Admin\Links($this->conn, $this->mitsuba);
 		include("admin.ui.php");
@@ -49,13 +47,15 @@ class Admin
 		} else {
 			$groupid = $_SESSION['group'];
 		}
+		$e = array("permission" => $permission);
+		$this->mitsuba->emitEvent("permission", $e);
 		if (!$this->checkPermission($permission, $groupid))
 		{
 			die("Insufficient permissions");
 		}
 	}
 
-	function checkPermission($permission, $groupid = false)
+	function listPermissions($groupid = false)
 	{
 		if ($groupid == false)
 		{
@@ -64,6 +64,42 @@ class Admin
 				return false;
 			}
 			$groupid = $_SESSION['group'];
+		}
+		$permissions = $this->conn->query("SELECT * FROM group_permissions INNER JOIN permissions ON group_permissions.pid=permissions.id WHERE gid=".$groupid);
+		$list = array();
+		while ($row = $permissions->fetch_assoc())
+		{
+			$list[$row['name']] = 1;
+		}
+		return $list;
+	}
+
+	function checkPermission($permission, $groupid = false)
+	{
+		if ($groupid == false)
+		{
+			if (!empty($this->user_permissions))
+			{
+				$groupid = $this->user_permissions;
+			} else {
+				$groupid = $this->listPermissions();
+				if ($groupid == false) {
+					return false;
+				}
+			}
+		}
+		if (is_array($groupid))
+		{
+			$p = explode(".", $permission);
+			if (!empty($groupid[$permission]))
+			{
+				return true;
+			} elseif (count($p) > 1) {
+				array_pop($p);
+				return $this->checkPermission(implode(".", $p), $groupid);
+			} else {
+				return false;
+			}
 		}
 		$p = explode(".", $permission);
 		$permission = $this->conn->query("SELECT * FROM group_permissions INNER JOIN permissions ON group_permissions.pid=permissions.id AND permissions.name='".$this->conn->real_escape_string($permission)."' WHERE gid=".$groupid);
@@ -163,34 +199,14 @@ class Mitsuba
 	public $config;
 	public $caching;
 	public $common;
+	public $module_config;
 	public $posting;
 	public $admin;
 
 	function __construct($connection) {
 		$this->conn = $connection;
 		$this->config = $this->getConfig();
-		$plugins = array();
-		if ($array = glob("./plugins/*.php")) { $plugins = $array; }
-		foreach ($plugins as $pluginname)
-		{
-			include($pluginname);
-		}
-		foreach (get_declared_classes() as $classname)
-		{
-			if (substr($classname, 0, 7) == "plugin_")
-			{
-				try {
-					$plugin = new $classname($this->conn, $this);
-					if ($plugin instanceof IPlugin)
-					{
-						$this->plugins_array[] = $plugin;
-					} 
-				} catch (Exception $e)
-				{
-					//we do nothing because we can't
-				}
-			}
-		}
+		$this->module_config = $this->getModuleConfig();
 		include("board.php");
 		$this->board = new \Mitsuba\Board($this->conn, $this);
 		include("caching.php");
@@ -200,6 +216,12 @@ class Mitsuba
 		include("posting.php");
 		$this->posting = new \Mitsuba\Posting($this->conn, $this);
 		$this->admin = new Admin($this->conn, $this);
+		$modules = $this->conn->query("SELECT * FROM module_classes");
+		while ($module = $modules->fetch_assoc())
+		{
+			include("./".$module['namespace']."/".$module['file']);
+			$this->$module['name'] = new $module['class']($this->conn, $this->mitsuba);
+		}
 	}
 
 	function getConfig()
@@ -213,18 +235,15 @@ class Mitsuba
 		return $array;
 	}
 
-	function triggerEvent($event, &$eventData)
+	function getModuleConfig()
 	{
-		foreach ($this->plugins_array as $class)
+		$result = $this->conn->query("SELECT * FROM module_config;");
+		$array = array();
+		while ($row = $result->fetch_assoc())
 		{
-			if ($class instanceof IPlugin)
-			{
-				if (method_exists($class, $event))
-				{
-					$class->$event($eventData);
-				}
-			}
+			$array[$row['namespace'].".".$row['name']] = $row['value'];
 		}
+		return $array;
 	}
 
 	function getConfigValue($name)
@@ -244,6 +263,25 @@ class Mitsuba
 		$name = $this->conn->real_escape_string($name);
 		$value = $this->conn->real_escape_string($value);
 		$this->conn->query("UPDATE config SET value='".$value."' WHERE name='".$name."';");
+	}
+
+	function updateModuleConfigValue($namespace, $name, $value)
+	{
+		$namespace = $this->conn->real_escape_string($namespace);
+		$name = $this->conn->real_escape_string($name);
+		$value = $this->conn->real_escape_string($value);
+		$this->conn->query("UPDATE module_config SET value='".$value."' WHERE name='".$name."' AND namespace='".$namespace."';");
+	}
+
+	function emitEvent($name, &$data)
+	{
+		$modules = $this->conn->query("SELECT * FROM module_events WHERE event='".$this->conn->real_escape_string($name)."'");
+		while ($module = $modules->fetch_assoc())
+		{
+			include("./modules/".$module['namespace']."/".$module['file']);
+			$eventclass = new $module['class']($this->conn, $this);
+			$eventclass->$module['method']($name, $data);
+		}
 	}
 
 	function getPath($path, $location, $relative)

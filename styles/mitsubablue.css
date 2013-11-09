@@ -1185,10 +1185,6 @@ table:not(#postForm) td.comments {
 	
 table:not(#postForm) td.reason {
 	min-width: 150px!important;
-	}
-	
-table:not(#postForm) td.nowrapIP {
-	white-space: nowrap;
 }
 
 .boxcontent > table:nth-child(5) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(5) {
@@ -1203,52 +1199,20 @@ table:not(#postForm) td.nowrapIP {
 	word-break: break-word;
 }
 
-.boxcontent > table:nth-child(5) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(1) > center:nth-child(1) > a:nth-child(1) {
-	white-space: nowrap;
-}
-
-.boxcontent > table:nth-child(5) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(2) > center:nth-child(1) > span:nth-child(1) > span:nth-child(1) {
-	white-space: nowrap;
-}
-
-.boxcontent > table:nth-child(1) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(8) > center:nth-child(1) {
-	white-space: nowrap;
-}
-
-.boxcontent > table:nth-child(1) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(1) > center:nth-child(1) > a:nth-child(1) {
-	white-space: nowrap;
-}
-
-.boxcontent > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(1) > center:nth-child(1) > a:nth-child(1) {
-	white-space: nowrap;
-}
-
-.boxcontent > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(5) > center:nth-child(1) {
-	white-space: nowrap;
-}
-
-.boxcontent > table:nth-child(5) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(2) > span:nth-child(1) {
-	white-space: nowrap;
-}
-
 .boxcontent > table:nth-child(5) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(4) > center:nth-child(1) {
 	min-width: 75px;
 }
 
-.boxcontent > table:nth-child(5) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(2) {
-	text-align: center;
-}
-
-.boxcontent > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(1) > span:nth-child(1) {
-	white-space: nowrap;
-}
-
-.boxcontent > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(1) {
-	text-align: center;
-}
-
 .boxcontent > table:nth-child(2) > tbody:nth-child(2) > tr:nth-child(n+1) > td:nth-child(3) {
 	min-width: 75px;
+}
+
+.text-center {
+	text-align: center;
+}
+
+.text-nowrap {
+	white-space: nowrap;
 }
 
 /* GLOBAL */

@@ -12,6 +12,7 @@ if ((empty($_POST['board'])) && (empty($_POST['delete'])) && (empty($_POST['repo
 if (!file_exists("./config.php"))
 {
 header("Location: ./install.php");
+die();
 }
 
 include("config.php");
@@ -27,6 +28,8 @@ if (!empty($_POST['mode']))
 	}
 	$conn = new mysqli($db_host, $db_username, $db_password, $db_database);
 	$mitsuba = new Mitsuba($conn);
+	$e = array("requestdata" => &$_POST);
+	$mitsuba->emitEvent("imgboard.begin", $e);
 	$mod = 0;
 	if ((!empty($_GET['mod'])) && ($_GET['mod']>=1))
 	{
@@ -112,7 +115,22 @@ if (!empty($_POST['mode']))
 			}
 			$_SESSION['captcha'] = "";
 
-			if (strlen($_POST['com']) > $bdata['maxchars'])
+			$wfresult = $conn->query("SELECT * FROM wordfilter WHERE active=1");
+			$replace_array = array();
+			while ($row = $wfresult->fetch_assoc())
+			{
+				if ($row['boards'] != "%")
+				{
+					$boards = explode(",", $row['boards']);
+					if (in_array($bdata['short'], $boards))
+					{
+						$replace_array[$row['search']] = $row['replace'];
+					}
+				} else {
+					$replace_array[$row['search']] = $row['replace'];
+				}
+			}
+			if (strlen(strtr($_POST['com'], $replace_array)) > $bdata['maxchars'])
 			{
 				$mitsuba->common->showMsg($lang['img/error'], sprintf($lang['img/comment_too_long'],strlen($_POST['com']),$bdata['maxchars']));
 				exit;
@@ -232,7 +250,7 @@ if (!empty($_POST['mode']))
 					}
 					$mime = $nfo['mimetype'];
 					$ext = ".".$nfo['extension'];
-					$fileid = time() . mt_rand(10000000, 999999999);
+					$fileid = time() . rand(10000000, 999999999);
 					$filename = $fileid . $ext; 
 					$target_path .= $filename;
 					$md5 = md5_file($_FILES['upfile']['tmp_name']);
@@ -313,7 +331,7 @@ if (!empty($_POST['mode']))
 				}
 			}
 			if (!empty($_POST['name'])) { setcookie("mitsuba_name", $_POST['name'], time() + 86400*256); } else { setcookie("mitsuba_name","", time() + 86400*256); }
-			if ((!empty($_POST['email'])) && ($_POST['email'] != "sage")) { setcookie("mitsuba_email", $_POST['email'], time() + 86400*256); } else { setcookie("mitsuba_email","", time() + 86400*256); }
+			if ((!empty($_POST['email'])) && (strtolower($_POST['email']) != "sage")) { setcookie("mitsuba_email", $_POST['email'], time() + 86400*256); } else { setcookie("mitsuba_email","", time() + 86400*256); }
 			if (!empty($_POST['fake_id'])) { setcookie("mitsuba_fakeid", $_POST['fake_id'], time() + 86400*256); } else { setcookie("mitsuba_fakeid","", time() + 86400*256); }
 			
 			$spoiler = 0;
@@ -352,7 +370,9 @@ if (!empty($_POST['mode']))
 				$fname = $conn->real_escape_string($url_title);
 			}
 			$mitsuba->common->showMsg($lang['img/updating_index'], $lang['img/updating_index']);
-			$is = $mitsuba->posting->addPost($_POST['board'], $name, $_POST['email'], $_POST['sub'], $_POST['com'], $password, $filename, $fname, $mime, $resto, $md5, $thumb_w, $thumb_h, $spoiler, $embed, $raw, $sticky, $lock, $nolimit, $nofile, $fake_id, $cc_text, $cc_style, $cc_icon, $redirect);
+			//We'll remove here all "non-printable" characters
+			$com = $_POST['com'];
+			$is = $mitsuba->posting->addPost($_POST['board'], $name, $_POST['email'], $_POST['sub'], $com, $password, $filename, $fname, $mime, $resto, $md5, $thumb_w, $thumb_h, $spoiler, $embed, $raw, $sticky, $lock, $nolimit, $nofile, $fake_id, $cc_text, $cc_style, $cc_icon, $redirect, $_POST);
 			if ($is == -16)
 			{
 				$mitsuba->common->showMsg($lang['img/error'], $lang['img/board_no_exists']);
@@ -402,6 +422,7 @@ if (!empty($_POST['mode']))
 				}
 				echo '<meta http-equiv="refresh" content="2;URL='."'".$return_url."index.html'".'">';
 			} elseif (!empty($_POST['report'])) {
+				$board = $conn->real_escape_string($_POST['board']);
 				$mitsuba->common->banMessage($board);
 				foreach ($_POST as $key => $value)
 				{
@@ -415,16 +436,11 @@ if (!empty($_POST['mode']))
 						}
 					}
 				}
-				if ($mod == 1)
-				{
-					echo '<meta http-equiv="refresh" content="2;URL='."'./mod.php?/board&b=".$_POST['board']."'".'">';
-				} else {
-					echo '<meta http-equiv="refresh" content="1;URL='."'".$return_url."index.html'".'">';
-				}
+				echo '<meta http-equiv="refresh" content="2;URL='."'./".$board."/index.html'".'">';
 			}
 			break;
 		case "usrapp":
-			//$_POST['email']; $_POST['msg'];
+				$board = $conn->real_escape_string($_POST['board']);
 			if (!empty($_POST['msg']))
 			{
 				$msg = $conn->real_escape_string(htmlspecialchars($_POST['msg']));
@@ -439,6 +455,9 @@ if (!empty($_POST['mode']))
 				}
 			}
 			break;
+		default:
+			$e = array("mode" => $mode, "requestdata" => &$_POST);
+			$mitsuba->emitEvent("imgboard.mode", $e);
 	}
 	$conn->close();
 } else {
