@@ -131,8 +131,35 @@ class Common {
 		<?php
 	}
 
-	function thumb($board,$filename,$s=250){
+	function thumb($board, $filename, $ext, $s=250){
 		$extension = $this->getGraphicsExtension();
+		
+		if ($ext == ".webm") {
+
+			$fname = './'.$board.'/src/'.$filename.$ext;
+			//die('<video src="'.$fname.'" type=\'"video/webm;codecs="vp8, vorbis"\' controls ></video>');
+			$thumb_dir = './'.$board.'/src/thumb/'; //thumbnail directory
+			require_once dirname(__FILE__) . '/videodata.php';
+
+			$videoDetails = videoData($fname);
+			if (!isset($videoDetails['container']) || $videoDetails['container'] != 'webm') return "not a WebM file";
+
+			if (isset($videoDetails['frame']) && $thumbFile = fopen($thumb_dir.$filename.$ext, 'wb')) {
+			    fwrite($thumbFile, $videoDetails['frame']);
+			    fclose($thumbFile);
+			} else {
+			    // Fall back to file thumbnail
+			    //$post->thumb = 'file';
+			}
+			unset($videoDetails['frame']);
+			return array("width" => 250, "height" => intval(250*($videoDetails['height'] / $videoDetails['width'])));
+		}
+
+		$filename = $filename.$ext;
+
+		if (!(strpos($filename,"url:") === false)) { //dont make thumbnails of links xD
+			return 0;	
+		}
 		
 		if ($extension == "imagick")
 		{
@@ -223,9 +250,10 @@ class Common {
 	}
 
 	function delTree($dir) { 
-	   $files = array_diff(scandir($dir), array('.','..')); 
+	   $files = array_diff(scandir($dir), array('.','..'));
+	   
 	    foreach ($files as $file) { 
-	      (is_dir("$dir/$file")) ? delTree("$dir/$file") : unlink("$dir/$file"); 
+	      (is_dir("$dir/$file")) ? $this->delTree("$dir/$file") : unlink("$dir/$file"); 
 	    } 
 	    return rmdir($dir); 
 	  } 

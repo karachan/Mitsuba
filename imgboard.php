@@ -210,19 +210,67 @@ if (!empty($_POST['mode']))
 			{
 				if (!empty($_POST['url']))
 				{
-					//TODO: Links
+					//Links 
+					$postUrl = $mitsuba->linkshare->prepareUrl($_POST['url']);
+					
+						if ($postUrl) {
+							$check = $mitsuba->linkshare->getStatus($postUrl);
+							
+							if ($bdata['allow_all_sites'] == 0) {
+								$parser = $mitsuba->linkshare->checkUrl($postUrl);
+							} else {
+								$parser = 'defaultParser.php'; //this file doesn't have to exist
+							}
+							
+						} else {
+							$check = false;
+							$parser = false;
+						}
+					
+					if ( ($check) && ($parser) ) {
+					
+						$linksize = "";
+						$serviceName = "Other";
+					
+						$parserOpened = $mitsuba->linkshare->openLinkParser($parser);
+						
+						$name = $mitsuba->linkshare->getTitle($postUrl, $parserOpened);
+						$linksize = $mitsuba->linkshare->getSize($postUrl, $parserOpened);
+						$serviceName = $mitsuba->linkshare->getServiceName($postUrl, $parserOpened);
+						
+						$url = htmlspecialchars(stripslashes($postUrl));
+						
+						if ($linksize) {
+							$url_title = htmlspecialchars( stripslashes( "{$name} - [{$linksize} - {$serviceName}]" ) );
+						} else {
+							$url_title = htmlspecialchars( stripslashes( "{$name} [{$serviceName}]" ) );
+						}
+						
+					} else {
+					
+						if ((!$parser) && ($check)) {
+							$mitsuba->common->showMsg($lang['img/error'], $lang['img/badhostlink']);
+							exit;
+						}
+						
+						if (!$check) {
+							$mitsuba->common->showMsg($lang['img/error'], $lang['img/badlink']);
+							exit;
+						}
+					}
+					
 				} else {
-					$mitsuba->common->showMsg($lang['img/error'], $lang['img/no_link']);
+					$mitsuba->common->showMsg($lang['img/error'], $lang['img/nolink']);
 					exit;
 				}
-			} elseif ((!empty($_POST['embed'])) && ($nofile == 0) && ($bdata['embed']==1))
+			} elseif ((!empty($_POST['embed'])) && ($nofile == 0) && ($bdata['embeds']==1))
 			{
 				if (($bdata['file_replies']==0) && ($_POST['resto']!=0))
 				{
 					$mitsuba->common->showMsg($lang['img/error'], $lang['img/file_replies_not_allowed']);
 					exit;
 				}
-				$filename = $mitsuba->checkEmbed($bdata, $_POST['embeds'], $return_url);
+				$filename = $mitsuba->board->checkEmbed($bdata, $_POST['embed'], $return_url);
 			} elseif (($nofile == 0) && ($bdata['type']!="textboard")) {
 				if (($bdata['file_replies']==0) && ($_POST['resto']!=0))
 				{
@@ -272,7 +320,7 @@ if (!empty($_POST['mode']))
 						}
 					}
 					if(move_uploaded_file($_FILES['upfile']['tmp_name'], $target_path)) {
-						if ($nfo['image']==1) { $gen_thumb = 1; }
+						if ($nfo['image']==1 || $nfo['extension'] == "webm") { $gen_thumb = 1; }
 						printf($lang['img/file_uploaded'], basename( $_FILES['upfile']['name']));
 					} else {
 						echo $lang['img/upload_error'];
@@ -308,7 +356,7 @@ if (!empty($_POST['mode']))
 				{
 					if ($resto != 0)
 					{
-						$returned = $mitsuba->common->thumb($board, $fileid.$ext, 125);
+						$returned = $mitsuba->common->thumb($board, $fileid, $ext, 125);
 						if ((empty($returned['width'])) || (empty($returned['height'])))
 						{
 							unlink($target_path);
@@ -318,7 +366,7 @@ if (!empty($_POST['mode']))
 						$thumb_w = $returned['width'];
 						$thumb_h = $returned['height'];
 					} else {
-						$returned = $mitsuba->common->thumb($board, $fileid.$ext);
+						$returned = $mitsuba->common->thumb($board, $fileid, $ext);
 						if ((empty($returned['width'])) || (empty($returned['height'])))
 						{
 							unlink($target_path);
@@ -342,6 +390,7 @@ if (!empty($_POST['mode']))
 			setcookie("password", $password, time() + 86400*256);
 			$embed = 0;
 			$fname = "";
+			
 			if (!empty($filename))
 			{
 				if (substr($filename, 0, 6) != "embed:")
