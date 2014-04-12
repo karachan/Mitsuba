@@ -2107,7 +2107,7 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 						<span class="fileText" id="fT'.$row['id']."_".$filenum.'"><a href="'.$filepath.'">File</a>: ('.$fileinfo['filesize'].', <span title="'.$fileinfo['orig_filename'].'">'.$fileinfo['orig_filename'].'</span>)</span>
 					</div>
 					<a class="fileThumb webm" href="'.$filepath.'">
-					<video style="width:250px" src="'.$thumbpath.'" type=\'"video/webm;codecs="vp8, vorbis"\'></video>
+					<video style="width:250px;max-height:400px;" src="'.$thumbpath.'" type=\'"video/webm;codecs="vp8, vorbis"\'></video>
 					</a>
 
 					</div>
@@ -2151,14 +2151,14 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 					{
 						if ($extensions[$fileinfo['mimetype']]['image']==1)
 						{
-							//$file .= '<a class="fileThumb" href="'.$filepath.'" target="_blank"><img src="'.$thumbpath.'" alt="Thumbnail" style="width: '.$fileinfo['t_w'].'px; height: '.$fileinfo['t_h'].'px"/></a>';
-							
+							$file .= '<a class="fileThumb" href="'.$filepath.'" target="_blank"><img src="'.$thumbpath.'" alt="Thumbnail" style="width: '.$fileinfo['t_w'].'px; height: '.$fileinfo['t_h'].'px"/></a>';
+							/*
 							$file .= '<a class="fileThumb" href="'.$filepath.'" target="_blank">';
 							if($fileinfo['t_w'] <= 250 && $fileinfo['t_h'] <= 250) {
-								$file .= $fileinfo['t_w'].'x'.$fileinfo['t_h'].' <img src="'.$filepath.'" alt="Thumbnail" style="width: '.$fileinfo['t_w'].'px;"/></a>';
+								$file .= '<img src="'.$filepath.'" alt="Thumbnail kurwa" style="width: '.$fileinfo['t_w'].'px;"/></a>';
 							} else {
-								$file .= '<img src="'.$thumbpath.'" alt="Thumbnail" style="width: '.$fileinfo['t_w'].'px;"/></a>';
-							}
+								$file .= '<img src="'.$thumbpath.'" alt="Thumbnail xD" style="width: '.$fileinfo['t_w'].'px;"/></a>';
+							}*/
 						} elseif ($extensions[$fileinfo['mimetype']]['image']!=0)
 						{
 							$file .= sprintf($extensions[$fileinfo['mimetype']]['image'], $filepath);
