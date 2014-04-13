@@ -37,7 +37,7 @@ $mitsuba->admin->reqPermission("search.ip");
 			$posts = $conn->query("SELECT * FROM posts WHERE ip='".$_GET['ip']."'");
 			while ($row = $posts->fetch_assoc())
 			{
-				echo "<tr><td class='text-center'>";
+				echo "<tr><td class='text-center text-nowrap'>";
 				
 				if($row['resto'] == 0)
 				{
