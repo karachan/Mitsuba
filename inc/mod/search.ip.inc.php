@@ -4,6 +4,7 @@ if (!defined("IN_MOD"))
 	die("Nah, I won't serve that file to you.");
 }
 $mitsuba->admin->reqPermission("search.ip");
+
 		if ((!empty($_GET['ip'])) && (filter_var($_GET['ip'], FILTER_VALIDATE_IP)))
 		{
 			$mitsuba->admin->ui->startSection(sprintf($lang['mod/showing_posts'], $_GET['ip']));
@@ -12,6 +13,7 @@ $mitsuba->admin->reqPermission("search.ip");
 			<table>
 			<thead>
 			<tr>
+			<td><?php echo $lang['mod/post']; ?></td>
 			<td><?php echo $lang['mod/name']; ?></td>
 			<td><?php echo $lang['mod/e_mail']; ?></td>
 			<td><?php echo $lang['mod/date']; ?></td>
@@ -22,6 +24,7 @@ $mitsuba->admin->reqPermission("search.ip");
 			</tr>
 			</thead>
 			<tbody>
+			
 			<?php
 			require_once( "libs/jbbcode/Parser.php" );
 			$parser = new \JBBCode\Parser();
@@ -35,6 +38,16 @@ $mitsuba->admin->reqPermission("search.ip");
 			while ($row = $posts->fetch_assoc())
 			{
 				echo "<tr><td class='text-center'>";
+				
+				if($row['resto'] == 0)
+				{
+					echo("<a href='./".$row['board']."/res/".$row['id'].".html'>/".$row['board']."/".$row['id'].".html</a>");
+					
+				} else {
+					echo("<a href='./".$row['board']."/res/".$row['resto'].".html#p".$row['id']."'>/".$row['board']."/".$row['resto'].".html#p".$row['id']</a>);
+				}
+				
+				echo "</td><td class='text-center'>"; //roote technology xD
 				
 				$trip = "";
 				if (!empty($row['trip']))
@@ -84,12 +97,11 @@ $mitsuba->admin->reqPermission("search.ip");
 				}
 				echo '<td class="text-center">[<a href="?/delete_post&b='.$row['board'].'&p='.$row['id'].'">D</a>] [<a href="?/delete_post&b='.$row['board'].'&p='.$row['id'].'&f=1">F</a>] [<a href="?/bans/add&b='.$row['board'].'&p='.$row['id'].'">B</a>]</td>';
 			}
+		
+		}
 			
 			?>
 			</tbody>
 			</table>
 
 <?php $mitsuba->admin->ui->endSection(); ?>
-			<?php
-		}
-?>
