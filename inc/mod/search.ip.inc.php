@@ -44,7 +44,7 @@ $mitsuba->admin->reqPermission("search.ip");
 					echo("<a href='./".$row['board']."/res/".$row['id'].".html'>/".$row['board']."/".$row['id'].".html</a>");
 					
 				} else {
-					echo("<a href='./".$row['board']."/res/".$row['resto'].".html#p".$row['id']."'>/".$row['board']."/".$row['resto'].".html#p".$row['id']</a>);
+					echo("<a href='./".$row['board']."/res/".$row['resto'].".html#p".$row['id']."'>/".$row['board']."/".$row['resto'].".html#p".$row['id']."</a>");
 				}
 				
 				echo "</td><td class='text-center'>"; //roote technology xD
