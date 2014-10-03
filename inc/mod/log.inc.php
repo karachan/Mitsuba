@@ -17,7 +17,7 @@ $mitsuba->admin->reqPermission("logs.view");
 	</thead>
 	<tbody>
 		<?php
-		$log = $conn->query("SELECT log.*, users.username FROM log LEFT JOIN users ON log.mod_id=users.id ORDER BY date DESC");
+		$log = $conn->query("SELECT log.*, users.username FROM log LEFT JOIN users ON log.mod_id=users.id ORDER BY date DESC LIMIT 250");
 		while ($row = $log->fetch_assoc())
 		{
 			echo "<tr>";

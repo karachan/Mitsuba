@@ -78,7 +78,7 @@ if ($mitsuba->admin->checkPermission("reports.clear.all"))
 				$resto = $pdata['resto'];
 			}
 			echo "<tr>";
-			echo "<td class='text-center text-nowrap'><a href='?/board&b=".$row['board']."&t=".$resto."#p".$row['reported_post']."'>/".$row['board']."/".$row['reported_post']."</a></td>";
+			echo "<td class='text-center text-nowrap'><a href='./".$row['board']."/res/".$resto.".html#p".$row['reported_post']."'>/".$row['board']."/".$row['reported_post']."</a></td>";
 			if (!empty($pdata['filename']))
 			{
 				if ($pdata['filename'] == "deleted")
@@ -89,7 +89,15 @@ if ($mitsuba->admin->checkPermission("reports.clear.all"))
 				} elseif (substr($pdata['filename'], 0, 6) == "embed:") {
 					echo "<td><a href='".substr($pdata['filename'], 6)."'>Embed</a></td>";
 				} else {
-					echo "<td class='text-center'><a href='./".$row['board']."/src/".$pdata['filename']."' target='_blank'><img src='./".$row['board']."/src/thumb/".$pdata['filename']."' /></a></td>";
+				
+					if (substr($pdata['filename'], -4) == "webm") {
+						$thumbfn = trim($pdata['filename'], ".webm"); 
+						$thumbfn .= ".gif";						
+					} else {
+						$thumbfn = $pdata['filename'];
+					}
+				
+					echo "<td class='text-center'><a href='./".$row['board']."/src/".$pdata['filename']."' target='_blank'><img src='./".$row['board']."/src/thumb/".$thumbfn."' /></a></td>";
 				}
 			} else {
 				echo "<td></td>";

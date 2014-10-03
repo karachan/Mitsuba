@@ -1,4 +1,5 @@
 <?php
+
 class Admin
 {
 	private $conn;
@@ -176,7 +177,7 @@ class Admin
 
 	function logAction($text)
 	{
-		$this->conn->query("DELETE FROM log WHERE date<".(time()-(60*60*24*7)));
+		//$this->conn->query("DELETE FROM log WHERE date<".(time()-(60*60*24*7)));
 		$text = $this->conn->real_escape_string($text);
 		$this->conn->query("INSERT INTO log (date, event, mod_id) VALUES (".time().", '".$text."', ".$_SESSION['id'].")");
 	}
@@ -202,6 +203,7 @@ class Mitsuba
 	public $module_config;
 	public $posting;
 	public $admin;
+	public $linkshare;
 
 	function __construct($connection) {
 		$this->conn = $connection;
@@ -209,6 +211,8 @@ class Mitsuba
 		$this->module_config = $this->getModuleConfig();
 		include("board.php");
 		$this->board = new \Mitsuba\Board($this->conn, $this);
+		include("linkshare.php");
+		$this->linkshare = new \Mitsuba\Linkshare($this->conn, $this);
 		include("caching.php");
 		$this->caching = new \Mitsuba\Caching($this->conn, $this);
 		include("common.php");

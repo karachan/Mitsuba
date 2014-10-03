@@ -13,18 +13,22 @@ $mitsuba->admin->reqPermission("post.delete.single");
 				$imageonly = 1;
 			}
 			$mitsuba->posting->deletePost($_GET['b'], $_GET['p'], "", $imageonly, true);
+			
+			$mitsuba->admin->logAction('Deleted '.($imageonly ? 'file from ':'').'post '.$_GET['b'].'/'.$_GET['p']);
+
+
 			if ($imageonly == 1)
 			{
 			?>
 	
 <?php $mitsuba->admin->ui->startSection($lang['mod/file_deleted']); ?>
-<a href="?/board&b=<?php echo $_GET['b']; ?>"><?php echo $lang['mod/back']; ?></a><?php $mitsuba->admin->ui->endSection(); ?>
+<a href="./<?php echo $_GET['b']; ?>/"><?php echo $lang['mod/back']; ?></a><?php $mitsuba->admin->ui->endSection(); ?>
 		<?php
 			} else {
 			?>
 	
 <?php $mitsuba->admin->ui->startSection($lang['mod/post_deleted_short']); ?>
-<a href="?/board&b=<?php echo $_GET['b']; ?>"><?php echo $lang['mod/back']; ?></a><?php $mitsuba->admin->ui->endSection(); ?>
+<a href="./<?php echo $_GET['b']; ?>/"><?php echo $lang['mod/back']; ?></a><?php $mitsuba->admin->ui->endSection(); ?>
 		<?php
 		}
 		} else {

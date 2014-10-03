@@ -190,10 +190,8 @@ function addLoader()
 					$(".prev").html($(".prev", nodes).html());
 					$(".pages").html($(".pages", nodes).html());
 					$(".next").html($(".next", nodes).html());
-					if (localStorage.getItem("o_backlinks") == 1)
-					{
-						addBacklinks("#b"+currentPage);
-					}
+
+					addBacklinks("#b"+currentPage);
 					if (localStorage.getItem("o_preview") == 1)
 					{
 						addPostpreview("#b"+currentPage);
@@ -345,10 +343,9 @@ function updateThread(isAuto)
 			$("#p"+pid).removeClass("postdeleted");
 		});
 		addQuotelinks();
-		if (localStorage.getItem("o_backlinks") == 1)
-		{
-			addBacklinks(tid);
-		}
+
+		addBacklinks(tid);
+
 		if (localStorage.getItem("o_preview") == 1)
 		{
 			addPostpreview(tid);
@@ -467,7 +464,7 @@ function addFastReply(parent, thread)
 	}
 	
 	if ($('#captchaField').length!==0) {
-		var captchaCode = '<iframe class="FScaptcha" src="../captcha.php" style="overflow: hidden; width: 300px; height: 70px; border: 1px solid #000000; display: block;"/> \
+		var captchaCode = '<iframe class="FScaptcha" src="../captcha.php" style="overflow-x:hidden; width: 300px; height: 70px; border: 1px solid #000000; display: block;" scrolling="no"/> \
 			<input type="text" id="captchaField" name="captcha" style="width: 253;" placeholder="Captcha"> <br />';
 	} else {
 		var captchaCode = '';
@@ -579,10 +576,9 @@ function addThreadExpander(parent)
 				$(tid).find("a").each( function () { if ($(this).attr("href") !== null) { $(this).attr("href", absolutizeURI(href, $(this).attr("href"))); } } );
 				$(tid).find("img").each( function () { $(this).attr("src", absolutizeURI(href, $(this).attr("src")));  } );
 				
-				if (localStorage.getItem("o_backlinks") == 1)
-				{
-					addBacklinks(tid);
-				}
+
+				addBacklinks(tid);
+
 				if (localStorage.getItem("o_preview") == 1)
 				{
 					addPostpreview(tid);
@@ -978,7 +974,7 @@ function adminStuff(parent)
 							{
 								$(el).children(".postNum").after(' <span style="color: red;">[A]</span> ');
 							}
-							$(el).children(".nameBlock").after(' <span class="posterIp">(<a href="http://whatismyipaddress.com/ip/'+json.ip+'" target="_blank">'+json.ip+'</a>)</span> [<a href="'+api_url+'/info&ip='+json.ip+'">N</a>] <b style="color: red;">[ OP ]</b>');
+							$(el).children(".nameBlock").after(' <span class="posterIp">(<a href="http://whatismyipaddress.com/ip/'+json.ip+'" target="_blank">'+json.ip+'</a>)</span> [<a title="Get country" class="get-country" href="#" data-ip="'+json.ip+'">C</a>] [<a href="'+api_url+'/info&ip='+json.ip+'">N</a>] <b style="color: red;">[ OP ]</b>');
 						}
 					}
 				});
@@ -1043,7 +1039,7 @@ function adminStuff(parent)
 							{
 								op = ' <b style="color: red;">[ OP ]</b>';
 							}
-							$(el).children(".nameBlock").after(' <span class="posterIp">(<a href="http://whatismyipaddress.com/ip/'+json.ip+'" target="_blank">'+json.ip+'</a>)</span> [<a href="'+api_url+'/info&ip='+json.ip+'">N</a>]'+op);
+							$(el).children(".nameBlock").after(' <span class="posterIp">(<a href="http://whatismyipaddress.com/ip/'+json.ip+'" target="_blank">'+json.ip+'</a>)</span> [<a title="Get country" class="get-country" href="#" data-ip="'+json.ip+'">C</a>] [<a href="'+api_url+'/info&ip='+json.ip+'">N</a>]'+op);
 						}
 					}
 				});
@@ -1064,7 +1060,23 @@ function adminStuff(parent)
 			
 		});
 		$(".edit").click(adminInlineEdit);
+
+		$(".postInfo").on("click", ".get-country", function() {
+			var ip = $(this).data("ip");
+			var self = $(this);
+			$.ajax({
+				url:"http://www.telize.com/geoip/"+ip,
+				dataType: "jsonp",
+				success: function(json) {
+					var reg = json.region ? ' ('+json.region+')': '';
+					self.text(json.country+reg+' '+json.isp);
+				}
+			});
+			return false;
+		});
+
 	}
+
 }
 
 function adminInlineEdit(event)
@@ -1147,7 +1159,9 @@ function webmToggle(element) {
 		element.remove();
 	} else {
 		var filePath = element.attr('href'), thumbPath = element.find('video').attr('src');
-		element.hide().after(element.find('video').clone().attr({src: filePath, controls: "enabled",autoplay:"true",loop:"true"}).addClass('full-view'));
+
+		element.hide().after('<video src="'+filePath+'" class="full-view" type=\'"video/webm;codecs="vp8, vorbis"\' autoplay loop controls></video>');
+//		element.hide().after(element.find('video').clone().attr({src: filePath, controls: "enabled",autoplay:"true",loop:"true"}).addClass('full-view'));
 		element.after('<a href="#" class="close"></a>');
 	}
 }

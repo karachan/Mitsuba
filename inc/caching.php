@@ -1,5 +1,9 @@
 <?php
 namespace Mitsuba;
+
+error_reporting(0);
+ini_set('display_errors', 0);
+
 class Caching
 {
 	private $conn;
@@ -122,42 +126,52 @@ class Caching
 		$lines = explode("\n", $new);
 		$new = "";
 		$c_lines = 0;
+		
+ 		while ( (count($lines) > 1) && (end($lines) == "") ) { array_pop($lines); }
+
 		foreach ($lines as $line)
 		{
-			if ($line == "")
-			{
-				$new .= "<br />";
-				continue;
-			}
-			if (substr($line, 0, 2) == ">>")
-			{
-				$newline = "";
-				$space = explode(" ", $line);
-				foreach ($space as $word)
-				{
-					$newline .= $this->getQuotelink($board, $word, $specialchars, $thread)." ";
-				}
-				$new .= $newline."<br />";
-			} elseif (substr($line, 0, 1) == ">")
-			{
-				if ($specialchars == 1) { $line = htmlspecialchars($line); }
-				$new .= "<span class='quote'>".$line."</span><br />";
-			} else {
-				$newline = "";
-				$space = explode(" ", $line);
-				foreach ($space as $word)
-				{
-					$newline .= $this->getQuotelink($board, $word, $specialchars, $thread)." ";
-				}
-				$new .= $newline."<br />";
-				
-			}
-			$c_lines++;
-			if (($c_lines > 15) && ($thread == 0) && (is_numeric($id)) && ($id > 0))
-			{
-				break;
-			}
+		
+		        $c_lines++;
+		
+		        if ($line == "")
+		        {
+		                $new .= "<br />";
+		                if (($c_lines > 15) && ($thread == 0) && (is_numeric($id)) && ($id > 0)) break;
+		               
+		                continue;
+		        }
+		        if (substr($line, 0, 2) == ">>")
+		        {
+		                $newline = "";
+		                $space = explode(" ", $line);
+		                foreach ($space as $word)
+		                {
+		                        $newline .= $this->getQuotelink($board, $word, $specialchars, $thread)." ";
+		                }
+		                $new .= $newline."<br />";
+		        } elseif (substr($line, 0, 1) == ">")
+		        {
+		                if ($specialchars == 1) { $line = htmlspecialchars($line); }
+		                $new .= "<span class='quote'>".$line."</span><br />";
+		        } else {
+		                $newline = "";
+		                $space = explode(" ", $line);
+		                foreach ($space as $word)
+		                {
+		                        $newline .= $this->getQuotelink($board, $word, $specialchars, $thread)." ";
+		                }
+		                $new .= $newline."<br />";
+		               
+		        }
+		       
+		        if (($c_lines > 15) && ($thread == 0) && (is_numeric($id)) && ($id > 0))
+		        {
+		                break;
+		        }
 		}
+
+
 		$rexProtocol = '(https?://)?';
 		$rexDomain   = '((?:[-a-zA-Z0-9]{1,63}\.)+[-a-zA-Z0-9]{2,63}|(?:[0-9]{1,3}\.){3}[0-9]{1,3})';
 		$rexPort     = '(:[0-9]{1,5})?';
@@ -596,8 +610,9 @@ class Caching
 				}
 			}
 			if ($adm_type <= 0)
-			{
-				$postform .= '<input type="hidden" name="MAX_FILE_SIZE" value="'.$boarddata['filesize'].'" />';
+			{	
+				$newbdfs = $boarddata['filesize']*3;
+				$postform .= '<input type="hidden" name="MAX_FILE_SIZE" value="'.$newbdfs.'" />';
 			}
 			$postform .= '<input type="hidden" name="mode" value="regist" />
 				<table class="postForm" id="postForm">
@@ -618,11 +633,11 @@ class Caching
 			}
 			$postform .= '<tr>
 				<td>'.$lang['img/email'].'</td>
-				<td><input class="board-input" name="email" type="text" /></td>
+				<td><input class="board-input" name="email" placeholder=" " type="text" /></td>
 				</tr>
 				<tr>
 				<td>'.$lang['img/subject'].'</td>
-				<td><input class="board-input" name="sub" type="text" />';
+				<td><input class="board-input" name="sub" placeholder=" " type="text" />';
 			$postform .= '<input type="hidden" name="board" value="'.$board.'" />';
 			if ($threadno != 0)
 			{
@@ -632,7 +647,7 @@ class Caching
 				</tr>
 				<tr>
 				<td>'.$lang['img/comment'].'</td>
-				<td><textarea name="com" cols="35" rows="4"></textarea></td>
+				<td><textarea name="com" cols="35" rows="4" placeholder=" "></textarea></td>
 				</tr>';
 			$captchaUrl = "";
 			if ($boarddata['captcha']==1)
@@ -686,7 +701,9 @@ class Caching
 			}
 			$postform .= '<tr>
 				<td>'.$lang['img/password'].'</td>
-				<td><input id="postPassword" name="pwd" type="password" maxlength="8" /> <span class="password">'.$lang['img/password_used'].'</span></td>
+				<td>
+				<input type="text" style="display: none"><input type="password" style="display: none">
+				<input id="postPassword" name="pwd" type="password" maxlength="8" /> <span class="password">'.$lang['img/password_used'].'</span></td>
 				</tr>';
 			if ($adm_type >= 2)
 			{
@@ -716,14 +733,18 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 				}
 				$postform .= "</td></tr>";
 			}
-			$unique = $this->conn->query("SELECT DISTINCT ip FROM posts WHERE board='".$boarddata['short']."';")->num_rows;
+			
+			$unique = $this->conn->query("SELECT COUNT(DISTINCT ip) FROM posts WHERE board='".$boarddata['short']."';");
+			$uniqrslt = $unique->fetch_assoc();
+			$uniquePosts = $uniqrslt['COUNT(DISTINCT ip)'];
+			
 			$postform .= '<tr class="rules">
 				<td colspan="2">
 				<ul class="rules">
 				<li>'.$lang['img/supported_types'].$boarddata['extensions'].'</li>
 				<li>'.sprintf($lang['img/max_filesize'], $this->mitsuba->common->human_filesize($boarddata['filesize'])).'</li>
 				<li>'.$lang['img/thumbnail'].'</li>
-				<li>'.sprintf($lang['img/unique_user_posts'], $unique).'</li>
+				<li>'.sprintf($lang['img/unique_user_posts'], $uniquePosts).'</li>
 				'.$rules_ads.'</ul>
 				</td>
 				</tr>
@@ -975,13 +996,13 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 				<input type="hidden" name="mode" value="usrform" />'.$lang['img/delete_post'].' [<input type="checkbox" name="onlyimgdel" value="on" />'.$lang['img/file_only'].'] ';
 			if ($adm_type <= 1)
 			{
-			$file .= $lang['img/password'].' <input type="password" id="delPassword" name="pwd" maxlength="8" /> ';
+			$file .= $lang['img/password'].' <input type="password" id="delPassword" name="pwd" maxlength="8" placeholder=" "/> ';
 			}
 			$file .= '<input type="submit" name="delete" value="'.$lang['img/delete'].'" /><br />';
 			if ($adm_type <= 1)
 			{
 			$file .= '<input type="hidden" name="board" value="'.$boarddata['short'].'" /> ';
-			$file .= $lang['img/reason'].' <input type="text" name="reason" /><input type="submit" name="report" value="'.$lang['img/report'].'" />';
+			$file .= $lang['img/reason'].' <input type="text" name="reason" placeholder=" "/><input type="submit" name="report" value="'.$lang['img/report'].'" />';
 			}
 			$file .= '<div class="stylechanger" id="stylechangerDiv" style="display:none;">'.$lang['img/style'].' <select id="stylechanger"></select></div>
 				</div>';
@@ -1096,6 +1117,13 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 				if ($threadno != 0)
 				{
 					$handle = fopen("./".$board."/res/".$threadno.".html", "w");
+					
+					if ($boarddata['type'] == "imageboard") {
+						$handle50 = fopen("./".$board."/res/".$threadno."-50.html", "w");
+						fwrite($handle50, $this->generateLast50($file, $board, $threadno));
+						fclose($handle50);
+					}
+					
 				} else {
 					if ($pg != 0)
 					{
@@ -1110,6 +1138,50 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 				return $file;
 			}
 		}
+	}
+	
+	function generateLast50($filet, $board, $thread)
+	{
+		global $lang;
+		$len1 = NULL;
+		$len2 = NULL;
+		
+		$post50 = $this->conn->query("SELECT id FROM `posts` WHERE `resto` = ".$thread." AND `board` = '".$board."' ORDER BY id DESC LIMIT 50,1");
+		$post1 = $this->conn->query("SELECT id FROM `posts` WHERE resto = ".$thread." AND `board` = '".$board."' ORDER BY id LIMIT 1");
+		
+		if (($post50->num_rows) == 0) {
+			return $filet;
+		}
+		
+		$row1 = $post1->fetch_assoc()['id'];
+		$row50 = $post50->fetch_assoc()['id'];
+		
+		if ( ($row1 == 0) || ($row50 == 0) ) {
+			return "Something went wrong2";
+		}
+		
+		$looking = '<div id="p'.$row1;
+		$len1 = strpos($filet, $looking);
+		$part1 = substr($filet, 0, $len1);
+		
+		$looking = 'id="pc'.$row50.'"><div';
+		$len2 = strpos($filet, $looking);
+		$part2 = substr($filet, $len2);
+		
+		if ( ($len1 === FALSE) || ($len2 === FALSE) ) {
+			return "Something went wrong3";
+		}
+		
+		$alink = "./".$thread.".html";
+		$cllink = "<a href = ".$alink.">".$lang['img/click_here']."</a>".$lang['img/fullthrd'];
+		
+		$whatrp = 'name="mode" value="regist" />';
+		$torp = 'name="mode" value="regist" /><input type="hidden" name="md" value="50" />';
+		$part1 = str_replace($whatrp, $torp, $part1);
+		
+		$part1 .= '<div id="p'.$row1.'" class="post reply"><div class="postInfo" id="pi'.$row1.'"><blockquote class="postMessage" id="m'.$row1.'">'.$cllink.'</blockquote></div></div><div class="postContainer replyContainer "'; //tak bardzo mati
+		
+		return $part1.$part2;
 	}
 
 	function getMenyConfig($location = "board")
@@ -1251,6 +1323,10 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 
 				$file = $this->getThread($trow['board'], 0, 0, 0, $parser, $boarddata, $replace_array, $embed_table, $trow, $extensions, 1);
 			
+				$this->_parser = $parser;
+				$this->_replace_array = $replace_array;
+
+
 			}
 		}
 	}
@@ -1391,7 +1467,18 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 			{
 				$file .= '<img src="../img/sticky.gif" alt="Sticky" title="Sticky" class="stickyIcon" />';
 			}
-			$file .= '&nbsp; <span>[<a href="../'.$row['board'].'/res/'.$row['id'].'.html" class="replylink">'.$lang['img/reply'].'</a>]</span></span>';
+			
+			$postcnt = $this->conn->query("SELECT COUNT(id) FROM posts WHERE resto=".$row['id']." AND board='".$row['board']."' AND deleted=0");
+			$postrw = $postcnt->fetch_assoc();
+			$postcount = $postrw['COUNT(id)'];
+			
+			if ($postcount > 50) {
+				$link50 = '[<a href="../'.$row['board'].'/res/'.$row['id'].'-50.html" class="replylink">'.$lang['img/last50'].'</a>]';
+			} else {
+				$link50 = "";
+			}
+			
+			$file .= '&nbsp; <span>[<a href="../'.$row['board'].'/res/'.$row['id'].'.html" class="replylink">'.$lang['img/reply'].'</a>] '.$link50.'</span></span>';
 		}
 		$file .= '</div>';
 		$file .= $this->getFiles($row, $row['board'], $return, $threadno, $embed_table, $extensions);
@@ -1642,7 +1729,7 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 		$file = $this->getBoardHeader($board, $boarddata, "board", 1);
 		$file .= $this->getAds($boarddata['short'], "underform");
 		$location = "board";
-		$threads = $this->conn->query("SELECT *, (SELECT COUNT(*) FROM posts AS replies WHERE replies.resto=posts.id AND replies.deleted=0) as 'replies', (SELECT COUNT(*) FROM posts AS replies WHERE replies.resto=posts.id AND replies.filename != \"\" AND replies.deleted=0) AS 'img_replies' FROM posts WHERE resto=0 AND board='".$this->conn->real_escape_string($board)."' AND deleted=0 ORDER BY sticky DESC, lastbumped DESC");
+		$threads = $this->conn->query("SELECT *, id as thread_id, (SELECT COUNT(*) FROM posts WHERE board='$board' AND resto = thread_id AND deleted = 0) as replies FROM posts  WHERE resto=0 AND board='$board' AND deleted=0  ORDER BY sticky DESC, lastbumped DESC");
 		$file .= '<div class="navLinks">[<a href="./" accesskey="a">'.$lang['img/return_c'].'</a>] [<a href="#bottom">'.$lang['img/bottom'].'</a>]</div>';
 		$file .= '<div id="content">';
 		$file .= '<div id="threads" class="extended-small">';
@@ -1650,7 +1737,8 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 		while ($row = $threads->fetch_assoc())
 		{
 			$bumporder++;
-			$file .= '<div id="thread-'.$row['id'].'" data-bumporder="'.$bumporder.'" data-lastbumped="'.$row['lastbumped'].'" data-started="'.$row['date'].'" data-replycount="'.$row['replies'].'" class="thread">';
+			$sticky = $row['sticky'] ? ' sticky' : '';
+			$file .= '<div id="thread-'.$row['id'].'" data-bumporder="'.$bumporder.'" data-lastbumped="'.$row['lastbumped'].'" data-started="'.$row['date'].'" data-replycount="'.$row['replies'].'" class="thread'.$sticky.'">';
 			if (!empty($row['filename']))
 			{
 				$files = array();
@@ -1703,6 +1791,34 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 						$file .= '<a href="./res/'.$row['id'].'.html">';
 						$file .= '<b>Embed</b>';
 						$file .= '</a>';
+					} elseif (substr($fileinfo['filename'],-4) == "webm") {
+
+						$fileinfo['filename'] = substr($fileinfo['filename'],0,-4);
+						$thumbpath = './src/thumb/'.$fileinfo['filename'].'gif';
+
+						$w = $fileinfo['t_w'];
+						$h = $fileinfo['t_h'];
+						$new_w = 0;
+						$new_h = 0;
+						if (($w > 150) || ($h > 150))
+						{
+							if ($w > $h)
+							{
+								$new_w = 150;
+								$new_h = ($new_w/$w)*$h;
+							} elseif ($w < $h) {
+								$new_h = 150;
+								$new_w = ($new_h/$h)*$w;
+							} elseif ($w == $h) {
+								$new_h = 150;
+								$new_w = 150;
+							}
+						}
+						$file .= '<a href="./res/'.$row['id'].'.html">';
+						$file .= '<img alt="" id="thumb-'.$row['id'].'-'.$filenum.'" class="thumb" width="'.$new_w.'" height="'.$new_h.'" src="'.$thumbpath.'">';
+						$file .= '</a>';
+
+
 					} else {
 						$imgsize = "";
 						if ((isset($extensions[$fileinfo['mimetype']]['image'])) && ($extensions[$fileinfo['mimetype']]['image']==1))
@@ -1752,13 +1868,23 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 				$file .= '</a>';
 			}
 			
-			$file .= '<div title="(R)eplies / (I)mages" id="meta-'.$row['id'].'" class="meta">R: <b>'.$row['replies'].'</b> / I: <b>'.$row['img_replies'].'</b></div>';
+			//$file .= '<div title="(R)eplies / (I)mages" id="meta-'.$row['id'].'" class="meta">R: <b>'.$row['replies'].'</b> / I: <b>'.$row['img_replies'].'</b></div>';
+			$file .= '<div title="(R)eplies" id="meta-'.$row['id'].'" class="meta">R: <b>'.$row['replies'].'</b></div>';
 			$subject = "";
 			if (!empty($row['subject']))
 			{
 				$subject = "<b>".$row['subject']."</b>: ";
 			}
-			$file .= '<div class="teaser">'.$subject.htmlspecialchars(strtr($row['comment'], $replace_array)).'&nbsp;</div>';
+
+			//processComment($board, $string, $parser, $thread = 0, $specialchars = 1, $bbcode = 1, $id = 0, $resto = 0, $wordfilter = 1, $wf_table = array())
+			//$file .= $this->processComment($row['board'], $row['comment'], $parser, 2, 0, $boarddata['bbcode'], $row['id'], $row['resto'], $wf, $replace_array);
+
+			require_once( "libs/jbbcode/Parser.php" );
+			$_parser = new \JBBCode\Parser();
+
+			$file .= '<div class="teaser">'.$this->processComment($board, $row['comment'], $_parser, 2, 0, $boarddata['bbcode'], $row['id'], $row['resto'], 1, $this->_replace_array).'&nbsp;</div>';
+
+			//$file .= '<div class="teaser">'.$subject.htmlspecialchars(strtr($row['comment'], $replace_array)).'&nbsp;</div>';
 			$file .= '</div>';
 		}
 		$file .= '</div>';
@@ -2087,6 +2213,8 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 					
 					$file .= '</div>';
 				} elseif (substr($fileinfo['filename'],-4) == "webm") {
+
+					$fileinfo['filename'] = substr($fileinfo['filename'],0,-4);
 					
 					if ($return == 1)
 					{
@@ -2101,13 +2229,16 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 						$thumbpath = './../'.$board.'/src/thumb/'.$fileinfo['filename'];
 					}
 
+					$filepath .= "webm";
+					$thumbpath .= "gif";
+
 					$file .= '
 					<div class="file" id="f'.$row['id'].'">
 					<div class="fileInfo">
 						<span class="fileText" id="fT'.$row['id']."_".$filenum.'"><a href="'.$filepath.'">File</a>: ('.$fileinfo['filesize'].', <span title="'.$fileinfo['orig_filename'].'">'.$fileinfo['orig_filename'].'</span>)</span>
 					</div>
 					<a class="fileThumb webm" href="'.$filepath.'">
-					<video style="width:250px;max-height:400px;" src="'.$thumbpath.'" type=\'"video/webm;codecs="vp8, vorbis"\'></video>
+					<img src="'.$thumbpath.'"/>
 					</a>
 
 					</div>

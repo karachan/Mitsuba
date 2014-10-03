@@ -14,6 +14,7 @@ $mitsuba->admin->reqPermission("post.delete.ip");
 				if ($row['resto'] == 0)
 				{
 					unlink("./".$row['board']."/res/".$row['id'].".html");
+					unlink("./".$row['board']."/res/".$row['id']."-50.html");
 				}
 			}
 			$conn->query("DELETE FROM posts WHERE ip='".$_GET['ip']."'");

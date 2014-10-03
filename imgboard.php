@@ -1,5 +1,9 @@
 <?php
 session_start();
+
+error_reporting(0);
+ini_set('display_errors', 0);
+
 if (empty($_POST['mode']))
 {
 	die("Sorry.");
@@ -80,6 +84,12 @@ if (!empty($_POST['mode']))
 			if (!$mitsuba->common->isBoard($_POST['board']))
 			{
 				$mitsuba->common->showMsg($lang['img/error'], $lang['img/board_no_exists']);
+				exit;
+			}
+			
+			if ($mitsuba->common->isLocked($_POST['resto']))
+			{
+				$mitsuba->common->showMsg($lang['img/error'], $lang['img/thread_locked']);
 				exit;
 			}
 			
@@ -168,7 +178,7 @@ if (!empty($_POST['mode']))
 					$cc_text = $_SESSION['capcode_text'];
 					$cc_style = $_SESSION['capcode_style'];
 					$cc_icon = $_SESSION['capcode_icon'];
-				} elseif ((!empty($_POST['capcode'])) && ($_POST['capcode']==2) && (!empty($_POST['cc_text'])) && (!empty($_POST['cc_color'])) && ($mitsuba->admin->checkPermission("post.customcapcode")))
+				} elseif ((!empty($_POST['capcode'])) && ($_POST['capcode']==2) && (!empty($_POST['cc_text'])) && (!empty($_POST['cc_style'])) && ($mitsuba->admin->checkPermission("post.customcapcode")))
 				{
 					$cc_text = $_POST['cc_text'];
 					$cc_style = $_POST['cc_style'];
@@ -408,7 +418,9 @@ if (!empty($_POST['mode']))
 					$fname = "embed";
 				}
 			}
+			
 			$redirect = 0;
+			
 			if ($mod == 1)
 			{
 				$redirect = 1;
@@ -422,12 +434,15 @@ if (!empty($_POST['mode']))
 			//We'll remove here all "non-printable" characters
 			$com = $_POST['com'];
 			$is = $mitsuba->posting->addPost($_POST['board'], $name, $_POST['email'], $_POST['sub'], $com, $password, $filename, $fname, $mime, $resto, $md5, $thumb_w, $thumb_h, $spoiler, $embed, $raw, $sticky, $lock, $nolimit, $nofile, $fake_id, $cc_text, $cc_style, $cc_icon, $redirect, $_POST);
+			
 			if ($is == -16)
 			{
 				$mitsuba->common->showMsg($lang['img/error'], $lang['img/board_no_exists']);
 				exit;
 			}
 			break;
+			
+			
 		case "usrform":
 			if (!empty($_POST['delete']))
 			{
@@ -479,10 +494,8 @@ if (!empty($_POST['mode']))
 					{
 						$keys = explode("%", $key);
 						$done = $mitsuba->posting->reportPost($keys[1], $keys[2], $_POST['reason']);
-						if ($done == 1)
-						{
-							echo sprintf($lang['img/post_reported'], $keys[1]."/".$keys[2])."<br />";
-						}
+						echo sprintf($lang['img/post_reported'], $keys[1]."/".$keys[2])."<br />";
+
 					}
 				}
 				echo '<meta http-equiv="refresh" content="2;URL='."'./".$board."/index.html'".'">';

@@ -1,4 +1,5 @@
 <?php
+
 if (!defined("IN_MOD"))
 {
 	die("Nah, I won't serve that file to you.");
@@ -34,6 +35,8 @@ $mitsuba->admin->reqPermission("wordfilter.add");
 				}
 				if ($boards != "%") { $boards = substr($boards, 0, strlen($boards) - 1); }
 				$conn->query("INSERT INTO wordfilter (`search`, `replace`, `boards`, `active`, `regex`) VALUES ('".$search."', '".$replace."', '".$boards."', 1, 0);");
+
+				$mitsuba->admin->logAction("Added new wordfilter: <div><span style='padding: 2px 5px; border: 1px dotted; display: inline-block;'>".htmlspecialchars($search)."</span> => <span style='padding: 2px 5px; border: 1px dotted; display: inline-block;'>".htmlspecialchars($replace)."</span></div>");
 			}
 			$search = "";
 			$replace = "";
@@ -65,7 +68,10 @@ $mitsuba->admin->reqPermission("wordfilter.update");
 					}
 				}
 				if ($boards != "%") { $boards = substr($boards, 0, strlen($boards) - 1); }
+				$old = $conn->query("SELECT * FROM wordfilter WHERE id=".$id)->fetch_assoc();
 				$conn->query("UPDATE wordfilter SET `search`='".$search."', `replace`='".$replace."', `boards`='".$boards."' WHERE id=".$id);
+
+				$mitsuba->admin->logAction("Edited wordfilter: <div><span style='padding: 2px 5px; border: 1px dotted; display: inline-block;'>".htmlspecialchars($old['search'])."</span> => <span style='padding: 2px 5px; border: 1px dotted; display: inline-block;'>".htmlspecialchars($old['replace'])."</span></div><div><span style='padding: 2px 5px; border: 1px dotted; display: inline-block;'>".htmlspecialchars($search)."</span> => <span style='padding: 2px 5px; border: 1px dotted; display: inline-block;'>".htmlspecialchars($replace)."</span></div>");
 			}
 			$search = "";
 			$replace = "";
@@ -76,7 +82,12 @@ $mitsuba->admin->reqPermission("wordfilter.update");
 			$mitsuba->admin->reqPermission("wordfilter.delete");
 			$n = $conn->real_escape_string($_GET['n']);
 			if (!is_numeric($n)) { echo "<b style='color: red;'>".$lang['mod/fool']."</b>"; }
+
+			$old = $conn->query("SELECT * FROM wordfilter WHERE id=".$n)->fetch_assoc();
+
 			$conn->query("DELETE FROM wordfilter WHERE id=".$n);
+
+			$mitsuba->admin->logAction("Removed wordfilter: <div><span style='padding: 2px 5px; border: 1px dotted; display: inline-block;'>".htmlspecialchars($old['search'])."</span> => <span style='padding: 2px 5px; border: 1px dotted; display: inline-block;'>".htmlspecialchars($old['replace'])."</span></div>");
 		}
 		?>
 <b><?php echo $lang['mod/rebuild_notice']; ?></b><br />
@@ -93,7 +104,7 @@ $mitsuba->admin->reqPermission("wordfilter.update");
 </thead>
 <tbody>
 <?php
-$result = $conn->query("SELECT * FROM wordfilter ORDER BY search ASC");
+$result = $conn->query("SELECT * FROM wordfilter ORDER BY boards,search ASC");
 while ($row = $result->fetch_assoc())
 {
 echo "<tr>";

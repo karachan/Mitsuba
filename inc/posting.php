@@ -1,6 +1,8 @@
 <?php
 namespace Mitsuba;
 
+ini_set('display_errors', 0);
+
 class Posting {
 	private $conn;
 	private $mitsuba;
@@ -131,6 +133,8 @@ class Posting {
 								}
 							}
 						}
+						
+						$this->conn->query("DELETE FROM reports WHERE reported_post=".$postno);
 						$this->conn->query("UPDATE posts SET deleted=".time()." WHERE resto=".$postno." AND board='".$board."';");
 						$this->conn->query("UPDATE posts SET deleted=".time()." WHERE id=".$postno." AND board='".$board."';");
 						if ($bdata['hidden'] == 0)
@@ -144,6 +148,7 @@ class Posting {
 								unlink("./".$board."/res/".$postno."_index.html");
 							}
 							unlink("./".$board."/res/".$postno.".html");
+							unlink("./".$board."/res/".$postno."-50.html");
 						}
 						//$this->mitsuba->caching->generateView($board, $postno);
 
@@ -175,6 +180,8 @@ class Posting {
 								unlink("./".$board."/src/thumb/".$filename);
 							}
 						}
+						
+						$this->conn->query("DELETE FROM reports WHERE reported_post=".$postno);
 						$this->conn->query("UPDATE posts SET deleted=".time()." WHERE id=".$postno." AND board='".$board."';");
 						$this->mitsuba->caching->generateView($board, $postdata['resto']);
 						if ($config['caching_mode']==1)
@@ -469,7 +476,13 @@ class Posting {
 			} else {
 				if ($resto != 0)
 				{
-					echo '<meta http-equiv="refresh" content="2;URL='."'./".$board."/res/".$resto.".html#p".$id."".'">';
+					if ($_POST['md'] == 50) {
+						$resto50 = $resto."-50";
+					} else {
+						$resto50 = $resto;
+					}
+					
+					echo '<meta http-equiv="refresh" content="2;URL='."'./".$board."/res/".$resto50.".html#p".$id."".'">';
 				} else {
 					echo '<meta http-equiv="refresh" content="2;URL='."'./".$board."/res/".$id.".html'".'">';
 					
@@ -513,7 +526,7 @@ class Posting {
 
 		if ($config['enable_api']==1)
 		{
-			$this->mitsuba->caching->serializeBoard($_GET['b']);
+			@$this->mitsuba->caching->serializeBoard($_GET['b']);
 		}
 	}
 

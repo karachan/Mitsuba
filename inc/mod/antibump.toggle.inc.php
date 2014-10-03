@@ -18,7 +18,7 @@ if ((!empty($_GET['b'])) && (!empty($_GET['t'])) && ($mitsuba->common->isBoard($
 				?>
 	
 <?php $mitsuba->admin->ui->startSection($lang['mod/ab_off']); ?>
-<meta http-equiv="refresh" content="1;URL='?/board&b=<?php echo $_GET['b']."&t=".$_GET['t']; ?>'" />
+<meta http-equiv="refresh" content="1;URL='./<?php echo $_GET['b']."/res/".$_GET['t']; ?>.html'" />
 <?php $mitsuba->admin->ui->endSection(); ?>
 		<?php
 				} else {
@@ -27,7 +27,7 @@ if ((!empty($_GET['b'])) && (!empty($_GET['t'])) && ($mitsuba->common->isBoard($
 				?>
 	
 <?php $mitsuba->admin->ui->startSection($lang['mod/ab_on']); ?>
-<meta http-equiv="refresh" content="1;URL='?/board&b=<?php echo $_GET['b']."&t=".$_GET['t']; ?>'" />
+<meta http-equiv="refresh" content="1;URL='./<?php echo $_GET['b']."/res/".$_GET['t']; ?>.html'" />
 <?php $mitsuba->admin->ui->endSection(); ?>
 		<?php
 				}

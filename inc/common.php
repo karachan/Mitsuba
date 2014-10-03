@@ -1,5 +1,8 @@
 <?php
 namespace Mitsuba;
+
+ini_set('display_errors', 0);
+
 class Common {
 	private $conn;
 	private $mitsuba;
@@ -103,6 +106,19 @@ class Common {
 			return false;
 		}
 	}
+	
+	function isLocked($id)
+	{
+		
+		$result = $this->conn->query("SELECT * FROM posts WHERE `id`='".$this->conn->real_escape_string($id)."' AND `locked`=1");
+		if ($result->num_rows == 1)
+		{
+			return true;
+		} else {
+			return false;
+		}
+		
+	}
 
 	function showMsg($title, $text)
 	{
@@ -137,22 +153,17 @@ class Common {
 		if ($ext == ".webm") {
 
 			$fname = './'.$board.'/src/'.$filename.$ext;
-			//die('<video src="'.$fname.'" type=\'"video/webm;codecs="vp8, vorbis"\' controls ></video>');
-			$thumb_dir = './'.$board.'/src/thumb/'; //thumbnail directory
-			require_once dirname(__FILE__) . '/videodata.php';
+			$thumb_dir = './'.$board.'/src/thumb/';
+			require_once dirname(__FILE__) . '/webm.class.php';
 
-			$videoDetails = videoData($fname);
-			if (!isset($videoDetails['container']) || $videoDetails['container'] != 'webm') return "not a WebM file";
 
-			if (isset($videoDetails['frame']) && $thumbFile = fopen($thumb_dir.$filename.$ext, 'wb')) {
-			    fwrite($thumbFile, $videoDetails['frame']);
-			    fclose($thumbFile);
-			} else {
-			    // Fall back to file thumbnail
-			    //$post->thumb = 'file';
-			}
-			unset($videoDetails['frame']);
-			return array("width" => 250, "height" => intval(250*($videoDetails['height'] / $videoDetails['width'])));
+			$movie = new \webm($fname);
+
+			if ($movie->thumbnail($thumb_dir.$filename.'.gif', $s, $s))
+				return array("width" => $s, "height" => $s);
+			else
+				echo "Problem with creating thumbnail\n";
+
 		}
 
 		$filename = $filename.$ext;
@@ -476,7 +487,7 @@ class Common {
 	}
 
 
-	function isBanned($ip, $board)
+function isBanned($ip, $board)
 	{
 		
 		$ipbans = $this->conn->query("SELECT * FROM bans WHERE ip='".$ip."' AND (expires>".time()." OR expires=0) ORDER BY expires DESC;");
@@ -485,35 +496,16 @@ class Common {
 		$rangebandata = null;
 		$bandata = null;
 		$otherbans = array();
+		$ipbandata = null;
+		$rangebandata = null;
+		$bandata = null;
+		$otherbans = array();
+		
 		while ($row = $rangebans->fetch_assoc())
 		{
-			$range = str_replace('*','(.*)', $row['ip']);
-			if ($this->startsWith($range, "."))
-			{
-				if ((strpos($ip, $range) !== FALSE))
-				{
-					if ($row['boards'] == "%")
-					{
-						$rangebandata = $row;
-						$rangebandata['range'] = 1;
-					} else {
-						if ($board == "%")
-						{
-							$rangebandata = $row;
-							$rangebandata['range'] = 1;
-						} else {
-							$boards = explode(",", $row['boards']);
-							if (in_array($board, $boards))
-							{
-								$rangebandata = $row;
-								$rangebandata['range'] = 1;
-							}
-						}
-					}
-					$otherbans[] = $row;
-					$otherbans[count($otherbans)-1]['range'] = 1;
-				}
-			} elseif ($this->startsWith($ip, $range))
+
+			$range = $row['ip'];
+			if ($this->startsWith($ip, $range))
 			{
 				if ($row['boards'] == "%")
 				{
@@ -527,6 +519,7 @@ class Common {
 					} else {
 						$boards = explode(",", $row['boards']);
 						if (in_array($board, $boards))
+
 						{
 							$rangebandata = $row;
 							$rangebandata['range'] = 1;
@@ -535,8 +528,10 @@ class Common {
 				}
 				$otherbans[] = $row;
 				$otherbans[count($otherbans)-1]['range'] = 1;
-			} elseif (preg_match('/'.$range.'/', $ip))
-			{
+			} 
+
+			if (strpos($range, '*') !== false && preg_match('/^'.str_replace(['*', '.'], ['[0-9]', '\\.'], $range).'/', $ip)) {
+
 				if ($row['boards'] == "%")
 				{
 					$rangebandata = $row;
@@ -703,15 +698,20 @@ class Common {
 		}
 	}
 
+	
+
 	function banMessage($board = "%")
 	{
+		
 		$bandata = $this->isBanned($_SERVER['REMOTE_ADDR'], $board);
+
 				if ($bandata != 0)
 				{
 				?>
 				<html>
 	<head>
 	<title>Banned</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <?php
 $first_default = 1;
 $styles = $this->conn->query("SELECT * FROM styles ORDER BY `default` DESC");
@@ -911,10 +911,10 @@ while ($row = $styles->fetch_assoc())
 			}
 			if ((substr($filename, 0, 6) != "embed:") && ($filename != "deleted"))
 			{
-				unlink("./".$board."/src/".$filename);
-				if (file_exists("./".$board."/src/thumb/".$filename))
-				{
-					unlink("./".$board."/src/thumb/".$filename);
+				if ($filename) {
+					unlink("./".$board."/src/".$filename);
+					if (file_exists("./".$board."/src/thumb/".$filename))
+						unlink("./".$board."/src/thumb/".$filename);
 				}
 			}
 			
@@ -923,6 +923,13 @@ while ($row = $styles->fetch_assoc())
 			if ($bdata['hidden'] == 0)
 			{
 				unlink("./".$board."/res/".$row['id'].".html");
+				unlink("./".$board."/res/".$row['id']."-50.html");
+
+				if (file_exists("./".$board."/res/".$row['id']."_index.html"))
+					unlink("./".$board."/res/".$row['id']."_index.html");
+
+				if (file_exists("./".$board."/res/".$row['id'].".json"))
+					unlink("./".$board."/res/".$row['id'].".json");
 			}
 		}
 		$deleted_posts = $this->conn->query("SELECT * FROM posts WHERE board='".$board."' AND deleted<".(time()-3600*$this->mitsuba->config['keep_hours'])." AND deleted<>0");
@@ -968,6 +975,13 @@ while ($row = $styles->fetch_assoc())
 			if ($bdata['hidden'] == 0)
 			{
 				unlink("./".$board."/res/".$row['id'].".html");
+				unlink("./".$board."/res/".$row['id']."-50.html");
+
+				if (file_exists("./".$board."/res/".$row['id']."_index.html"))
+					unlink("./".$board."/res/".$row['id']."_index.html");
+
+				if (file_exists("./".$board."/res/".$row['id'].".json"))
+					unlink("./".$board."/res/".$row['id'].".json");
 			}
 		}
 	}

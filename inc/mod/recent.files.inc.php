@@ -46,7 +46,8 @@ $mitsuba->admin->reqPermission("recent.files");
 				$resto = $row['resto'];
 				$op = 0;
 				if ($row['resto'] == 0) { $resto = $row['id']; $op = 1; }
-				echo "<a href='?/board&b=".$row['board']."&t=".$resto."'>/".$row['board']."/".$row['id']."</a> ";
+				//echo "<a href='?/board&b=".$row['board']."&t=".$resto."'>/".$row['board']."/".$row['id']."</a> ";
+				echo "<a href='./".$row['board']."/res/".$resto.".html#p".$row['id']."'>/".$row['board']."/".$row['id']."</a> ";
 				if ($op == 1) { echo "<b>OP</b>"; }
 				echo "</td><td class='text-center text-nowrap'>";
 				$trip = "";
@@ -87,7 +88,15 @@ $mitsuba->admin->reqPermission("recent.files");
 					} elseif (substr($row['filename'], 0, 6) == "embed:") {
 						echo "<td><a href='".substr($row['filename'], 6)."'>Embed</a></td>";
 					} else {
-						echo "<td class='text-center'><a href='./".$row['board']."/src/".$row['filename']."' target='_blank'><img src='./".$row['board']."/src/thumb/".$row['filename']."' /></a></td>";
+					
+					if (substr($row['filename'], -4) == "webm") {
+						$thumbfn = trim($row['filename'], ".webm"); 
+						$thumbfn .= ".gif";						
+					} else {
+						$thumbfn = $row['filename'];
+					}
+					
+						echo "<td class='text-center'><a href='./".$row['board']."/src/".$row['filename']."' target='_blank'><img src='./".$row['board']."/src/thumb/".$thumbfn."' /></a></td>";
 					}
 				} else {
 					echo "<td></td>";
