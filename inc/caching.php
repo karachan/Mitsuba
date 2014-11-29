@@ -4,6 +4,11 @@ namespace Mitsuba;
 error_reporting(0);
 ini_set('display_errors', 0);
 
+if ($_SERVER['REMOTE_ADDR'] == '77.65.46.33') {
+	error_reporting(E_ALL);
+	ini_set('display_errors', 1);
+}
+
 class Caching
 {
 	private $conn;
@@ -51,7 +56,7 @@ class Caching
 						}
 				$out .= '
 				<br><h2>Custom board links</h2>
-				<input type="text" value="" name="o_custom_links">
+				<center><input type="text" value="" name="o_custom_links"></center>
 				<div class="btn-wrap">
 					<input type="button" value="Reset" id="settingsReset"/>
 					<input type="button" value="Save" id="settingsSave"/>
@@ -115,6 +120,33 @@ class Caching
 		} elseif ($location == "index") {
 			return $this->config['boardLinks'];
 		}
+	}
+	
+	function koncowki($int) { //xD
+		global $lang;
+		
+		if ($int == 0) return $lang['fnd/ow'];
+		if ($int == 1) return "";
+		
+		if ($int < 20) {
+		
+			if (($int%100 >= 5)) {
+				$ret = $lang['fnd/ow'];
+			} else {
+				$ret = $lang['fnd/y'];
+			}
+			
+		} else if (($int >= 20)) {
+		
+			if (($int%10 >= 5) || ($int%10 <= 1)) {
+				$ret = $lang['fnd/ow'];
+			} else {
+				$ret = $lang['fnd/y'];
+			}
+			
+		}
+		
+		return $ret;
 	}
 
 	function processComment($board, $string, $parser, $thread = 0, $specialchars = 1, $bbcode = 1, $id = 0, $resto = 0, $wordfilter = 1, $wf_table = array())
@@ -331,12 +363,14 @@ class Caching
 
 	function getAds($board, $position)
 	{
-		$ads = $this->conn->query("SELECT * FROM ads WHERE board=('".$this->conn->real_escape_string($board)."' OR '*' OR '') AND position='".$position."' AND `show`=1;");
+		$ads = $this->conn->query("SELECT * FROM ads WHERE (board='".$this->conn->real_escape_string($board)."' OR board='%') AND position='".$position."' AND `show`=1;");
 		$text = "";
+		
 		while ($ad = $ads->fetch_assoc())
 		{
 			$text .= $ad['text'];
 		}
+		
 		return $text;
 	}
 
@@ -373,7 +407,7 @@ class Caching
 			$file .= "<script type='text/javascript' src='".$this->mitsuba->getPath("./js/catalog.js", $location, 1)."'></script>";
 		} else {
 			$file .= "<script type='text/javascript' src='".$this->mitsuba->getPath("./js/style.js", $location, 1)."'></script>";
-			$file .= "<script type='text/javascript' src='".$this->mitsuba->getPath("./js/common.js", $location, 1)."'></script>";
+			$file .= "<script type='text/javascript' src='".$this->mitsuba->getPath("./js/common.js?v=6", $location, 1)."'></script>";
 			if ($location == "index")
 			{
 				$file .= "<script type='text/javascript' src='".$this->mitsuba->getPath("./js/admin.js", $location, 1)."'></script>";
@@ -405,7 +439,7 @@ class Caching
 		{
 			$images = array_merge($images, glob($imagesDirBoard . '*.{jpg,jpeg,png,gif}', GLOB_BRACE));
 		}
-		$randomImage = $images[array_rand($images)]; 
+		$randomImage = $images[mt_rand(0, count($images)-1)]; 
 		$file .= '<img class="title" src="'.$this->mitsuba->getPath($randomImage, $location, 1).'" alt="Mitsuba" />';
 		$file .= '<div class="boardTitle">/'.$boarddata['short'].'/ - '.$boarddata['name'].'</div>';
 		$file .= '<div class="boardSubtitle">'.$boarddata['des'].'</div>';
@@ -734,17 +768,21 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 				$postform .= "</td></tr>";
 			}
 			
+			$lastMinute = time()-60;
 			$unique = $this->conn->query("SELECT COUNT(DISTINCT ip) FROM posts WHERE board='".$boarddata['short']."';");
+			$pCount = $this->conn->query("SELECT COUNT(id) FROM posts WHERE (date >= ".$lastMinute.") AND (board = '".$boarddata['short']."');");
 			$uniqrslt = $unique->fetch_assoc();
+			$cntrslt = $pCount->fetch_assoc();
 			$uniquePosts = $uniqrslt['COUNT(DISTINCT ip)'];
+			$postsCount = $cntrslt['COUNT(id)'];
 			
 			$postform .= '<tr class="rules">
 				<td colspan="2">
 				<ul class="rules">
-				<li>'.$lang['img/supported_types'].$boarddata['extensions'].'</li>
+				<li>'.$lang['img/supported_types'].'png,jpg,gif,webm.</li>
 				<li>'.sprintf($lang['img/max_filesize'], $this->mitsuba->common->human_filesize($boarddata['filesize'])).'</li>
-				<li>'.$lang['img/thumbnail'].'</li>
-				<li>'.sprintf($lang['img/unique_user_posts'], $uniquePosts).'</li>
+				<li>'.sprintf($lang['img/unique_user_posts'], $uniquePosts, $this->koncowki(intval($uniquePosts))).'</li>
+				<li><span style="cursor: help;" title="'.sprintf($lang['img/postsCountHelp']).'">'.sprintf($lang['img/postsCount'], $postsCount, $this->koncowki(intval($postsCount))).'</span></li>
 				'.$rules_ads.'</ul>
 				</td>
 				</tr>
@@ -1140,14 +1178,14 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 		}
 	}
 	
-	function generateLast50($filet, $board, $thread)
+	function generateLast50($filet, $board, $thread) //wersja testowa oparta na strpos, dlaczego? zeby nie rozwalicz calego kodu mateosza, ktorego sam do konca nie rozumiem xD elo sg2'14
 	{
 		global $lang;
 		$len1 = NULL;
 		$len2 = NULL;
 		
 		$post50 = $this->conn->query("SELECT id FROM `posts` WHERE `resto` = ".$thread." AND `board` = '".$board."' ORDER BY id DESC LIMIT 50,1");
-		$post1 = $this->conn->query("SELECT id FROM `posts` WHERE resto = ".$thread." AND `board` = '".$board."' ORDER BY id LIMIT 1");
+		$post1 = $this->conn->query("SELECT id FROM `posts` WHERE resto = ".$thread." AND `board` = '".$board."' AND `deleted` = 0 ORDER BY id LIMIT 1");
 		
 		if (($post50->num_rows) == 0) {
 			return $filet;
@@ -1169,7 +1207,7 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 		$part2 = substr($filet, $len2);
 		
 		if ( ($len1 === FALSE) || ($len2 === FALSE) ) {
-			return "Something went wrong3";
+			return "Something went wrong3 ";
 		}
 		
 		$alink = "./".$thread.".html";
@@ -1538,11 +1576,12 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 		}
 		if ($row1[0] > 3)
 		{
+			$pOmitted = ($row1[0]-3);
 			if ($return == 1)
 			{
-				$file .= '<span class="summary">'.sprintf($lang['img/posts_omitted'], ($row1[0]-3), '<a href="?/board&b='.$row['board'].'&t='.$row['id'].'" class="replylink">', '</a>').'</span>';
+				$file .= '<span class="summary">'.sprintf($lang['img/posts_omitted'], $pOmitted, $this->koncowki($pOmitted), '<a href="?/board&b='.$row['board'].'&t='.$row['id'].'" class="replylink">', '</a>').'</span>';
 			} else {
-				$file .= '<span class="summary">'.sprintf($lang['img/posts_omitted'], ($row1[0]-3), '<a href="./res/'.$row['id'].'.html" class="replylink">', '</a>').'</span>';
+				$file .= '<span class="summary">'.sprintf($lang['img/posts_omitted'], ($pOmitted), $this->koncowki($pOmitted), '<a href="./res/'.$row['id'].'.html" class="replylink">', '</a>').'</span>';
 			}
 		}
 		$offset = 0;
@@ -1882,7 +1921,7 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 			require_once( "libs/jbbcode/Parser.php" );
 			$_parser = new \JBBCode\Parser();
 
-			$file .= '<div class="teaser">'.$this->processComment($board, $row['comment'], $_parser, 2, 0, $boarddata['bbcode'], $row['id'], $row['resto'], 1, $this->_replace_array).'&nbsp;</div>';
+			$file .= '<div class="teaser">'.$this->processComment($board, htmlspecialchars($row['comment']), $_parser, 2, 0, $boarddata['bbcode'], $row['id'], $row['resto'], 1, $this->_replace_array).'&nbsp;</div>';
 
 			//$file .= '<div class="teaser">'.$subject.htmlspecialchars(strtr($row['comment'], $replace_array)).'&nbsp;</div>';
 			$file .= '</div>';
@@ -2253,14 +2292,20 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 					{
 						$imgsize = ', '.$fileinfo['imagesize'];
 					}
+					
+					$imgFilename = 'http://karachan.org/'.$board.'/src/'.$fileinfo['filename']; //sory za ta sprawe z statycznym karachan.org xD
+					$sExif = 'http://regex.info/exif.cgi?url='.$imgFilename;
+					$sSearch = 'http://www.google.com/searchbyimage?image_url='.$imgFilename;
+					$fInfo = '<a href='.$sExif.' target="_blank">[i]</a> <a href='.$sSearch.' target="_blank">[g]</a>';
+					
 					if ($return == 1)
 					{
-						$file .= '<span class="fileText" id="fT'.$row['id']."_".$filenum.'"><a href="./'.$board.'/src/'.$fileinfo['filename'].'" target="_blank">File</a>: ('.$fileinfo['filesize'].$imgsize.', <span title="'.$fileinfo['orig_filename'].'">'.$fileinfo['orig_filename'].'</span>)</span>';
+						$file .= '<span class="fileText" id="fT'.$row['id']."_".$filenum.'"><a href="./'.$board.'/src/'.$fileinfo['filename'].'" target="_blank">File</a>: ('.$fileinfo['filesize'].$imgsize.', <span title="'.$fileinfo['orig_filename'].'">'.$fileinfo['orig_filename'].' '.$fInfo.'</span>)</span>';
 					} elseif ($threadno != 0)
 					{
-						$file .= '<span class="fileText" id="fT'.$row['id']."_".$filenum.'"><a href="../../'.$board.'/src/'.$fileinfo['filename'].'" target="_blank">File</a>: ('.$fileinfo['filesize'].$imgsize.', <span title="'.$fileinfo['orig_filename'].'">'.$fileinfo['orig_filename'].'</span>)</span>';
+						$file .= '<span class="fileText" id="fT'.$row['id']."_".$filenum.'"><a href="../../'.$board.'/src/'.$fileinfo['filename'].'" target="_blank">File</a>: ('.$fileinfo['filesize'].$imgsize.', <span title="'.$fileinfo['orig_filename'].'">'.$fileinfo['orig_filename'].' '.$fInfo.'</span>)</span>';
 					} else {
-						$file .= '<span class="fileText" id="fT'.$row['id']."_".$filenum.'"><a href="../'.$board.'/src/'.$fileinfo['filename'].'" target="_blank">File</a>: ('.$fileinfo['filesize'].$imgsize.', <span title="'.$fileinfo['orig_filename'].'">'.$fileinfo['orig_filename'].'</span>)</span>';
+						$file .= '<span class="fileText" id="fT'.$row['id']."_".$filenum.'"><a href="../'.$board.'/src/'.$fileinfo['filename'].'" target="_blank">File</a>: ('.$fileinfo['filesize'].$imgsize.', <span title="'.$fileinfo['orig_filename'].'">'.$fileinfo['orig_filename'].' '.$fInfo.'</span>)</span>';
 					}
 					$file .= '</div>';
 					$filepath = "";
@@ -2536,5 +2581,6 @@ if ($(\"#custom_cc\").prop(\"checked\"))
 			$this->serializeBoard($board);
 		}
 	}
+	
 }
 ?>

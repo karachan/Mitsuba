@@ -166,7 +166,7 @@ while ($row = $styles->fetch_assoc())
 }
 if ((!empty($_SESSION['logged'])) && ($_SESSION['logged']==1) && ($_SESSION['ip']!=$_SERVER['REMOTE_ADDR']))
 {
-	$mitsuba->admin->logAction(sprintf($lang['log/ip_changed'], $_SESSION['ip'], $_SERVER['REMOTE_ADDR']));
+	//$mitsuba->admin->logAction(sprintf($lang['log/ip_changed'], $_SESSION['ip'], $_SERVER['REMOTE_ADDR']));
 	$_SESSION['ip']=$_SERVER['REMOTE_ADDR'];
 }
 switch ($path)

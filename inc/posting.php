@@ -117,6 +117,13 @@ class Posting {
 								}
 							}
 						}
+						
+						$reports = $this->conn->query("SELECT * FROM posts WHERE resto=".$postdata['id']." AND board='".$board."'"); //delete reports from thread
+						while ($repo = $reports->fetch_assoc())
+						{
+							$this->conn->query("DELETE FROM reports WHERE reported_post=".$repo['id']." AND board='".$repo['board']."'");
+						}
+						
 						if ((!empty($postdata['filename'])) && ($postdata['filename'] != "deleted"))
 						{
 							$filename = $postdata['filename'];
@@ -134,7 +141,7 @@ class Posting {
 							}
 						}
 						
-						$this->conn->query("DELETE FROM reports WHERE reported_post=".$postno);
+						$this->conn->query("DELETE FROM reports WHERE reported_post=".$postno." AND board='".$board."'");
 						$this->conn->query("UPDATE posts SET deleted=".time()." WHERE resto=".$postno." AND board='".$board."';");
 						$this->conn->query("UPDATE posts SET deleted=".time()." WHERE id=".$postno." AND board='".$board."';");
 						if ($bdata['hidden'] == 0)
@@ -181,7 +188,7 @@ class Posting {
 							}
 						}
 						
-						$this->conn->query("DELETE FROM reports WHERE reported_post=".$postno);
+						$this->conn->query("DELETE FROM reports WHERE reported_post=".$postno." AND board='".$board."'");
 						$this->conn->query("UPDATE posts SET deleted=".time()." WHERE id=".$postno." AND board='".$board."';");
 						$this->mitsuba->caching->generateView($board, $postdata['resto']);
 						if ($config['caching_mode']==1)

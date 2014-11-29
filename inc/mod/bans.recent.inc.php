@@ -75,7 +75,15 @@ if ((!empty($_GET['c'])) && (is_numeric($_GET['c'])))
 	}
 	if ($logs)
 	{
-		echo "<td class='text-center text-nowrap'>".$row['username']."</td>";
+		$username = "";
+		
+		if ($row['username'] == NULL) {
+			$username = "<b>Spamfilter</b>";
+		} else {
+			$username = $row['username'];
+		}
+		
+		echo "<td class='text-center text-nowrap'>".$username."</td>";
 	}
 	echo "</tr>";
 	}

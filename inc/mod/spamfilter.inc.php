@@ -20,7 +20,12 @@ $mitsuba->admin->reqPermission("spamfilter.add");
 				$search = $conn->real_escape_string($_POST['search']);
 				$reason = $conn->real_escape_string($_POST['reason']);
 				$boards = "";
-				$regex = isset($_POST['regex']);
+				
+				if (isset($_POST['regex']) ) {
+					$regex = 1;
+				} else if (isset($_POST['filename'])) {
+					$regex = 2;
+				}
 				
 				if ((!empty($_POST['all'])) && ($_POST['all']==1))
 				{
@@ -68,7 +73,13 @@ $mitsuba->admin->reqPermission("spamfilter.update");
 				$id = $_POST['id'];
 				if (!is_numeric($id)) { echo "<b style='color: red;'>".$lang['mod/fool']."</b>"; }
 				$reason = $conn->real_escape_string($_POST['reason']);
-				$regex = isset($_POST['regex']);
+				
+				if (isset($_POST['regex']) ) {
+					$regex = 1;
+				} else if (isset($_POST['filename'])) {
+					$regex = 2;
+				}
+				
 				$boards = "";
 				if ((!empty($_POST['all'])) && ($_POST['all']==1))
 				{
@@ -131,7 +142,7 @@ $mitsuba->admin->reqPermission("spamfilter.delete");
 <thead>
 <tr>
 <td><?php echo $lang['mod/wf_search']; ?></td>
-<td><?php echo $lang['mod/regex']; ?></td>
+<td><?php echo $lang['mod/type']; ?></td>
 <td><?php echo $lang['mod/reason']; ?></td>
 <td><?php echo $lang['mod/boards']; ?></td>
 <td><?php echo $lang['mod/expires']; ?></td>
@@ -150,7 +161,7 @@ while ($row = $result->fetch_assoc())
 {
 echo "<tr>";
 echo "<td class='text-center'>".htmlspecialchars($row['search'])."</td>";
-echo "<td class='text-center'>"; if ($row['regex'] == 1) { echo($lang['mod/yes']);} else {echo($lang['mod/no']);} echo "</td>";
+echo "<td class='text-center'>"; if ($row['regex'] == 1) { echo("Regex");} else if ($row['regex'] == 2) {echo("Filename");} else {echo("Spamfilter");} echo "</td>";
 echo "<td class='text-center'>".htmlspecialchars($row['reason'])."</td>";
 if ($row['boards']=="%")
 {
@@ -180,6 +191,7 @@ echo "</tr>";
 <?php echo $lang['mod/reason']; ?>: <input type="text" name="reason" value="<?php echo htmlspecialchars($reason); ?>"/><br />
 <?php echo $lang['mod/expires']; ?>: <input type="text" name="expires" value="<?php echo htmlspecialchars($expires); ?>"/><br />
 <?php echo $lang['mod/regex'] ?>: <input type="checkbox" name="regex" <?php if($regex == 1) { echo "checked"; }?>"/><br />
+<?php echo $lang['mod/fn_spam'] ?>: <input type="checkbox" name="filename" <?php if($regex == 2) { echo "checked"; }?>"/><br />
 <br /><br />
 <?php
 $mitsuba->admin->ui->getBoardList();

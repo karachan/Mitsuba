@@ -82,12 +82,20 @@ $mitsuba->admin->reqPermission("bans.delete");
 	}
 	if ($logs)
 	{
-		echo "<td class='text-center text-nowrap'>".$row['username']."</td>";
+		$username = "";
+		
+		if ($row['username'] == NULL) {
+			$username = "<b>Spamfilter</b>";
+		} else {
+			$username = $row['username'];
+		}
+		
+		echo "<td class='text-center text-nowrap'>".$username."</td>";
 	}
 	echo "</tr>";
 	}
 	?>
 	</tbody>
 	</table>
-	<?php printf($lang['mod/showing_bans'], 15); ?> <a href="?/bans/all"><?php echo $lang['mod/show_all']; ?></a> <a href="?/bans/recent&c=100"><?php printf($lang['mod/show_recent'], 100); ?></a>
+	<?php printf($lang['mod/showing_bans'], 15); ?> <a href="?/bans/all"><?php echo $lang['mod/show_all']; ?></a> <a href="?/bans/recent&c=100"><?php printf($lang['mod/show_recent'], 100); ?></a> <a href="?/bans/recent&c=200">200</a> <a href="?/bans/recent&c=400">400</a>
 	<?php $mitsuba->admin->ui->endSection(); ?>

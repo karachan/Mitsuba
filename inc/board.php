@@ -12,7 +12,7 @@ class Board
 		$this->config = $this->mitsuba->config;
 	}
 
-	function checkSpam($comment, $board)
+	function checkSpam($comment, $board, $filename)
 	{
 		$spam = $this->conn->query("SELECT * FROM spamfilter WHERE active=1");
 		while ($row = $spam->fetch_assoc())
@@ -34,9 +34,20 @@ class Board
 						{
 
 						}
-					} else {
+						
+					} else if ($row['regex'] == 2) {
+							$fnnores = substr($filename, 0, strrpos($filename, '.'));
+							$attfn = " #Attachment: ".$this->conn->real_escape_string($filename);
+							
+							if (stripos($fnnores, $row['search']) !== false) {
+								$this->mitsuba->common->addSystemBan($_SERVER['REMOTE_ADDR'], $row['reason'], htmlspecialchars($_POST['com'].$attfn), $row['expires'], "%");
+								echo '<meta http-equiv="refresh" content="2;URL='."'./banned.php'".'">';
+								die();
+							}
+						
+					} else if ($row['regex'] == 0) {
 						if (stripos($comment, $row['search']) !== false) {
-							$this->mitsuba->common->addSystemBan($_SERVER['REMOTE_ADDR'], $row['reason'], htmlspecialchars($_POST['com']), $row['expires'], $row['boards']);
+							$this->mitsuba->common->addSystemBan($_SERVER['REMOTE_ADDR'], $row['reason'], htmlspecialchars($_POST['com']), $row['expires'], "%");
 							echo '<meta http-equiv="refresh" content="2;URL='."'./banned.php'".'">';
 							die();
 						}
@@ -55,13 +66,24 @@ class Board
 					{
 
 					}
-				} else {
-					if (stripos($comment, $row['search']) !== false) {
+					
+					} else if ($row['regex'] == 2) {
+							$fnnores = substr($filename, 0, strrpos($filename, '.'));
+							$attfn = " #Attachment: ".$this->conn->real_escape_string($filename);
+							
+							if (stripos($fnnores, $row['search']) !== false) {
+								$this->mitsuba->common->addSystemBan($_SERVER['REMOTE_ADDR'], $row['reason'], htmlspecialchars($_POST['com'].$attfn), $row['expires'], "%");
+								echo '<meta http-equiv="refresh" content="2;URL='."'./banned.php'".'">';
+								die();
+							}
+						
+					} else if ($row['regex'] == 0) {
+						if (stripos($comment, $row['search']) !== false) {
 							$this->mitsuba->common->addSystemBan($_SERVER['REMOTE_ADDR'], $row['reason'], htmlspecialchars($_POST['com']), $row['expires'], "%");
 							echo '<meta http-equiv="refresh" content="2;URL='."'./banned.php'".'">';
 							die();
+						}
 					}
-				}
 			}
 		}
 	}

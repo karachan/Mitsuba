@@ -52,7 +52,7 @@ $logs = $mitsuba->admin->checkPermission("logs.view");
 	}
 	if ($delete)
 	{
-	echo "<td class='text-center'><a href='?/bans&del=1&b=".$row['id']."'>".$lang['mod/delete']."</a></td>";
+	echo "<td class='text-center'><a href='?/rangebans&del=1&b=".$row['id']."'>".$lang['mod/delete']."</a></td>";
 	} else {
 	echo "<td></td>";
 	}

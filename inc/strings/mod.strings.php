@@ -51,6 +51,7 @@ $lang['mod/manage_styles'] = "Manage styles";
 $lang['mod/manage_wordfilter'] = "Manage wordfilter";
 $lang['mod/manage_spamfilter'] = "Manage spamfilter";
 $lang['mod/manage_range_bans'] = "Manage range bans";
+$lang['mod/fn_spam'] = "Filename spamfilter";
 $lang['mod/global_message'] = "Global message";
 $lang['mod/rebuild_cache'] = "Rebuild cache";
 $lang['mod/action_log'] = "Action log";
